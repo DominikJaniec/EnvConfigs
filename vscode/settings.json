@@ -1,0 +1,10 @@
+// Place your settings in this file to overwrite the default settings
+{
+    "editor.minimap.enabled": false,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "vim.useCtrlKeys": false,
+    "vim.handleKeys": { "<C-[>": true },
+    "vim.disableAnnoyingNeovimMessage": true,
+    "workbench.colorTheme": "Default Light+"
+}

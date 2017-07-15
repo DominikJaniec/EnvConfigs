@@ -1,0 +1,17 @@
+####################################################################
+# This file contains List of Extensions' names for VS Code.
+#
+# Empty lines or beginning with '#' are ignored.
+#
+
+donjayamanne.githistory
+hoovercj.haskell-linter
+Ionide.Ionide-fsharp
+ms-vscode.csharp
+ms-vscode.PowerShell
+ms-vscode.vs-keybindings
+sbrink.elm
+streetsidesoftware.code-spell-checker
+Vans.haskero
+vscodevim.vim
+yzane.markdown-pdf
