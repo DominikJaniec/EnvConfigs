@@ -1,5 +1,6 @@
 // Place your settings in this file to overwrite the default settings
 {
+    "editor.lineNumbers": "relative",
     "editor.minimap.enabled": false,
     "files.trimTrailingWhitespace": true,
     "files.insertFinalNewline": true,
