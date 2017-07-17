@@ -1,5 +1,6 @@
 $vsCodePath = Join-Path $env:USERPROFILE "AppData\Roaming\Code\User"
-$oneDrivePath = Join-Path $env:USERPROFILE "OneDrive\Configurations\VS Code"
+$oneDriveBasePath = Join-Path $env:USERPROFILE "OneDrive"
+$oneDrivePath = Join-Path $oneDriveBasePath "Configurations\VS Code"
 $currentPath = (Get-Item -Path ".\" -Verbose).FullName
 
 Function InstallExtensionsFrom($sourceFile) {
@@ -40,7 +41,12 @@ MakeLinkFor "keybindings.json" $vsCodePath
 MakeLinkFor "settings.json" $vsCodePath
 
 Write-Output "`n  3. Linking configuration files to the OneDrive:"
-MakeLinkFor "keybindings.json" $oneDrivePath
-MakeLinkFor "settings.json" $oneDrivePath
+IF (Test-Path $oneDriveBasePath) {
+    MakeLinkFor "keybindings.json" $oneDrivePath
+    MakeLinkFor "settings.json" $oneDrivePath
+}
+Else {
+    Write-Output "`t OneDrive synchronization skipped due unknown OneDrive location..."
+}
 
 Write-Output "`n  4. Done."
