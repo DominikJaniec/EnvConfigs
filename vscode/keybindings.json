@@ -11,6 +11,11 @@
         "when": "editorTextFocus && parameterHintsMultipleSignatures && parameterHintsVisible"
     },
     {
+        "key": "alt+j",
+        "command": "workbench.action.quickOpenSelectNext",
+        "when": "inQuickOpen"
+    },
+    {
         "key": "alt+k",
         "command": "selectPrevSuggestion",
         "when": "editorTextFocus && suggestWidgetMultipleSuggestions && suggestWidgetVisible"
@@ -19,5 +24,110 @@
         "key": "alt+k",
         "command": "showPrevParameterHint",
         "when": "editorTextFocus && parameterHintsMultipleSignatures && parameterHintsVisible"
+    },
+    {
+        "key": "alt+k",
+        "command": "workbench.action.quickOpenSelectPrevious",
+        "when": "inQuickOpen"
+    },
+    {
+        "key": "ctrl+oem_4",
+        "command": "extension.vim_escape",
+        "when": "editorTextFocus && vim.active && !inDebugRepl"
+    },
+    {
+        "key": "shift+9",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "shift+0",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "oem_plus",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "oem_4",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "shift+oem_4",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "oem_6",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "shift+oem_6",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "oem_5",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "shift+oem_5",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "oem_1",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "shift+oem_1",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "oem_7",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "shift+oem_7",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "oem_comma",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "shift+oem_comma",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "oem_period",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "shift+oem_period",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "oem_2",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
+    },
+    {
+        "key": "space",
+        "command": "^acceptSelectedSuggestion",
+        "when": "editorTextFocus && suggestWidgetVisible"
     }
 ]
