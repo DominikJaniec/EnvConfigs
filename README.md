@@ -2,6 +2,15 @@
 
 My personal environment's configuration
 
+## Chocolatey & system software
+
+1. Install via script from: [Chocolatey.org](https://chocolatey.org/install)
+    ```PowerShell
+    Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+    ```
+2. Execute prepare script: [`.\Choco\!prepare.ps1`](Choco/!prepare.ps1)
+   * Optional script's parameter `-level (core|work|full)`
+
 ## Visual Studio Code
 
 1. Download and install from [Microsoft](https://code.visualstudio.com/docs/?dv=win)

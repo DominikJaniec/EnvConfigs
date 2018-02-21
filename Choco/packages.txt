@@ -1,0 +1,54 @@
+####################################################################
+# This file contains List of "install expressions" for Chocolatey.
+# Each lines defines packages' level (core|work|full) and then
+#     after pipe (character '|') is defined install expression
+#     which will be provided as parameter for `choco install`.
+#
+# Empty lines or beginning with '#' are ignored.
+#
+
+core|7zip.install
+core|sysinternals
+core|procexp
+core|hashcheck
+core|notepad3.install
+core|git.install
+core|vim
+core|f.lux
+core|ditto.install
+core|putty.install
+
+work|hxd
+work|conemu
+work|windirstat
+work|dotnetcore-sdk
+work|nodejs-lts
+work|linqpad5.install
+work|screentogif
+work|grepwin
+work|rdcman
+work|adobereader
+work|GoogleChrome
+work|firefox
+work|spotify
+
+full|haskell-stack
+full|elm-platform
+full|fake --pre
+full|googledrive
+full|dropbox
+full|pdf24
+full|graphviz
+full|virtualbox
+full|winscp.install
+full|miktex.install
+full|sqlitebrowser
+full|mirc
+full|vlc
+full|audacity
+full|exiftool
+full|tagscanner
+full|stellarium
+full|youtube-dl
+full|qbittorrent
+full|chocolateygui
