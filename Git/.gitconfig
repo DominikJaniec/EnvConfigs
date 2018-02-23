@@ -1,0 +1,84 @@
+[user]
+    name = Dominik Janiec
+    email = dominikjaniec@gmail.com
+
+
+[apply]
+    whitespace = fix
+
+[core]
+    autocrlf = true
+    editor = vim
+
+[diff]
+    tool = vimdiff
+    renames = true
+
+[difftool]
+    prompt = false
+
+[merge]
+    tool = vimdiff
+
+[mergetool]
+    keepBackup = false
+    trustExitCode = true
+
+[pull]
+    ff = only
+
+
+[alias]
+    ad = add -A
+    df = diff
+    dt = difftool
+    lo = log --oneline --graph -9
+    mt = mergetool
+    st = status
+    last = show --format=fuller --name-status
+    looog = log --oneline --graph
+    hidden = !git ls-files -v | grep "^[^H] "
+    recommit = commit --amend --reset-author
+    recommit-just-do-it = !git recommit --no-edit
+    ignore-for = !sh -c 'curl --output .gitignore --fail \"https://raw.githubusercontent.com/github/gitignore/master/$0.gitignore\"'
+    ignore-for-vs = !git ignore-for VisualStudio
+    put-aside-drop-all = !sh -c 'git for-each-ref --format=\"%(refname:short)\" refs/heads/_aside/\\* | xargs git branch -D'
+    put-aside-under = !sh -c 'git checkout -b \"_aside/$0\" >> /dev/null 2> /dev/null && echo \"Put aside under: $(git rev-parse --abbrev-ref HEAD) as:\" && git save-as \"$0\" && git checkout -'
+    put-aside = !sh -c 'git put-aside-under \"$(date +%Y-%m-%d_%H-%M)\"'
+    save-as = !sh -c 'git commit -m \"SAVE: $0 [staged]\" >> /dev/null || true && git add -A >> /dev/null && git commit -m \"SAVE: $0 [working]\" >> /dev/null || true && git log --oneline -3'
+    save = !git save-as \"Fast & temporay commit!\"
+    fire-fire-fire = !sh ~/Repos/git-fire/git-fire
+    visualize = !start gitk --all
+
+    settool-codecompare = !git config --local diff.tool codecompare && git config --local merge.tool codecompare
+    settool-meld = !git config --local diff.tool codecompare && git config --local merge.tool meld
+    settool-vim = !git config --local diff.tool vim && git config --local merge.tool vim
+    settool-visualstudio = !git config --local diff.tool visualstudio && git config --local merge.tool visualstudio
+    settool-vscode = !git config --local diff.tool vscode && git config --local merge.tool vscode
+    setuser-private = !git config --local user.email dominikjaniec@gmail.com && git config --local user.name \"Dominik Janiec\"
+    setuser-work = !git config --local user.email dominik.janiec@medius-group.pl && git config --local user.name \"Dominik Janiec\"
+
+
+[difftool "codecompare"]
+    cmd = \"C:\\Program Files\\Devart\\Code Compare\\codecompare.exe\" \"$LOCAL\" \"$REMOTE\"
+[mergetool "codecompare"]
+    cmd = \"C:\\Program Files\\Devart\\Code Compare\\codemerge.exe\" -MF=\"$LOCAL\" -TF=\"$REMOTE\" -BF=\"$BASE\" -RF=\"$MERGED\"
+
+[mergetool "meld"]
+    cmd = \"C:\\Program Files (x86)\\Meld\\Meld.exe\" \"$LOCAL\" \"$BASE\" \"$REMOTE\" --output=\"$MERGED\"
+
+[difftool "visualstudio"]
+    cmd = \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer\\vsDiffMerge.exe\" \"$LOCAL\" \"$REMOTE\" Source Target /ignorespace /t
+[mergetool "visualstudio"]
+    cmd = \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer\\vsDiffMerge.exe\" \"$LOCAL\" \"$REMOTE\" \"$BASE\" \"$MERGED\" /ignorespace /m /t
+
+[difftool "vscode"]
+    cmd = code --wait --diff \"$LOCAL\" \"$REMOTE\"
+[mergetool "vscode"]
+    cmd = code --wait \"$MERGED\"
+
+
+[filter "lfs"]
+    clean = git-lfs clean %f
+    smudge = git-lfs smudge %f
+    required = true

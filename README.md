@@ -11,6 +11,11 @@ My personal environment's configuration
 2. Execute prepare script: [`.\Choco\!prepare.ps1`](Choco/!prepare.ps1)
    * Optional script's parameter `-level (core|work|full)`
 
+## Git configuration
+
+1. Git should had been installed via [_Chocolatey_](#chocolatey--system-software).
+2. Execute prepare script: [`.\Git\!prepare.ps1`](VSCode/!prepare.ps1)
+
 ## Visual Studio Code
 
 1. Download and install from [Microsoft](https://code.visualstudio.com/docs/?dv=win)
