@@ -29,15 +29,6 @@ function HardLinkConfigurationTo ($targetDir) {
     MakeHardLinkTo $targetDir $PSScriptRoot "settings.json"
 }
 
-function HardLinkConfigurationToOneDrive {
-    if (-not(Test-Path $oneDriveBasePath) ) {
-        Write-Output "`t OneDrive synchronization skipped due unknown OneDrive location..."
-        return
-    }
-
-    HardLinkConfigurationTo $oneDrivePath
-}
-
 #######################################################################################
 
 EnsureVSCodeAvailable
@@ -48,7 +39,4 @@ InstallExtensionsFrom "extensions.txt"
 Write-Output "`n  2. Linking configuration files to the VS Code:"
 HardLinkConfigurationTo $vsCodePath
 
-Write-Output "`n  3. Linking configuration files to the OneDrive:"
-HardLinkConfigurationToOneDrive
-
-Write-Output "`n  4. VSCode preparation: Done."
+Write-Output "`n  3. VSCode preparation: Done."
