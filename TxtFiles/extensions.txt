@@ -1,0 +1,63 @@
+####################################################################
+# This file contains List of Files Extensions' which should be set
+# as then `txtfile`, so notepad will open them by default.
+#
+# Empty lines or beginning with '#' are ignored.
+#
+
+
+# Every file without extension:
+.
+
+# Standard shell files:
+.bash_history
+.bash_profile
+.bashrc
+
+# Git system files:
+.gitattributes
+.gitconfig
+.gitignore
+
+# Configurations files:
+.xml
+.json
+.cfg
+.conf
+.config
+.yaml
+.yml
+.properties
+
+# Other text files:
+.md
+.log
+.nfo
+.patch
+.diff
+.usr
+
+# Programming languages files:
+.fs
+.fsx
+.fsproj
+.hs
+.elm
+.cabal
+.cs
+.cshtml
+.csproj
+.ts
+.js
+.css
+.sh
+.cmd
+.ps1
+.sql
+.h
+.c
+.cpp
+.java
+.rb
+.sbt
+.scala
