@@ -9,12 +9,14 @@ My personal environment's configuration
     Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
     ```
 2. Execute prepare script: [`.\Choco\!prepare.ps1`](Choco/!prepare.ps1)
-   * Optional script's parameter `-PkgLevel (core|work|full)`
-   * Default value is assumed to be: `-PkgLevel full`
+   * It will install defined [applications](Choco/packages.txt) according to selected packages level.
+   * Optional script's parameter `-PkgLevel (core|work|full)`.
+   * Default value is assumed to be: `-PkgLevel full`.
 
 ## Text files extensions setup
 
 1. Execute prepare script: [`.\TxtFiles\!prepare.ps1`](TxtFiles/!prepare.ps1)
+   * It will setup all defined [files' extensions](TxtFiles/extensions.txt) to be treated as Text-Based files.
 
 ## Git configuration
 
@@ -27,7 +29,7 @@ My personal environment's configuration
 
 1. Download and install from [Microsoft](https://code.visualstudio.com/docs/?dv=win)
 2. Execute prepare script: [`.\VSCode\!prepare.ps1`](VSCode/!prepare.ps1)
-   * It will install selected [extensions](VSCode/extensions.txt) and hard-link configuration files ([`settings.json`](VSCode/keybindings.json), [`keybindings.json`](VSCode/keybindings.json)) into VS Code.
+   * It will install selected [extensions](VSCode/extensions.txt) and hard-link configuration files ([`settings.json`](VSCode/settings.json), [`keybindings.json`](VSCode/keybindings.json)) into VS Code.
    * There is an optional script's switch: `-LinkBack`. With it, script will just hard-link VS Code's configuration files back into this repository - because Git likes to break Hard-Links.
 
 ----
