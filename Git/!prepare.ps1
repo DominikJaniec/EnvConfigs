@@ -1,3 +1,5 @@
+param([switch]$LinkBack)
+
 . ".\common.ps1"
 
 function EnsureGitAvailable {
@@ -6,17 +8,32 @@ function EnsureGitAvailable {
         git --version
     }
     catch {
-        Write-Host "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        Write-Host "Please install Git before executing this script."
+        Write-Output "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        Write-Output "Please install Git before executing this script."
         throw "Environment is not ready, use: https://git-scm.com/"
     }
+}
+
+function PrepareGit {
+    Write-Output "`n  1. Linking Git configuration file to Home directory:"
+    MakeHardLinkTo $Env:USERPROFILE $PSScriptRoot ".gitconfig"
+}
+
+function HardLinkConfigBack {
+    Write-Output "`n  1. Linking Git configuration file from Home directory:"
+    rakeHardLinkTo $PSScriptRoot $Env:USERPROFILE ".gitconfig" $false
 }
 
 #######################################################################################
 
 EnsureGitAvailable
 
-Write-Output "`n  1. Linking configuration file of Git:"
-MakeHardLinkTo $Env:USERPROFILE $PSScriptRoot ".gitconfig"
+if ($LinkBack.IsPresent) {
+    HardLinkConfigBack
+}
+else {
+    PrepareGit
+}
 
-Write-Output "`n  2. Git configuratio: Done."
+Write-Output ""
+Write-Output "Git preparation: Done."

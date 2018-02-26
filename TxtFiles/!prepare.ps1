@@ -19,4 +19,5 @@ foreach ($ext in $extensions) {
     $counter += 1
 }
 
-Write-Output "`n  3. System preparation: Done."
+Write-Output ""
+Write-Output "`System preparation: Done."

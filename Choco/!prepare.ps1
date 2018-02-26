@@ -1,4 +1,4 @@
-param([string]$level = "full")
+param([string]$PkgLevel = "full")
 
 . ".\common.ps1"
 
@@ -8,8 +8,8 @@ function EnsureChocoAvailable {
         choco --version
     }
     catch {
-        Write-Host "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        Write-Host "Please install Chocolatey before executing this script."
+        Write-Output "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        Write-Output "Please install Chocolatey before executing this script."
         throw "Environment is not ready, use: https://chocolatey.org/install"
     }
 }
@@ -27,7 +27,7 @@ function PackagesLevelToIndex($pkgLevel) {
     }
 }
 
-function MakeExpression ($packageInstallLine) {
+function MakeChocoExpression ($packageInstallLine) {
     $expr = @{}
     $parts = "$packageInstallLine".Split("|");
     $expr.Level = PackagesLevelToIndex $parts[0].Trim()
@@ -35,20 +35,20 @@ function MakeExpression ($packageInstallLine) {
     return $expr
 }
 
-function PackagesInstallExpressionsFrom ($sourceFile, $pkgLevel) {
+function PackagesInstallExpressionsFrom ($sourceFile, $levelIdx) {
     return LoadLinesFrom $PSScriptRoot $sourceFile `
-        | ForEach-Object { MakeExpression $_ } `
-        | Where-Object { $_.Level -le $pkgLevel }
+        | ForEach-Object { MakeChocoExpression $_ } `
+        | Where-Object { $_.Level -le $levelIdx }
 }
 
 #######################################################################################
 
 EnsureChocoAvailable
 
-$packagesLevel = PackagesLevelToIndex $level
-$expressions = PackagesInstallExpressionsFrom "packages.txt" $packagesLevel
+$levelIdx = PackagesLevelToIndex $PkgLevel
+$expressions = PackagesInstallExpressionsFrom "packages.txt" $levelIdx
 $total = @($expressions).Count
-Write-Output "`n  1. Requested $total installations of software with packages level up to $packagesLevel (-level $level)."
+Write-Output "`n  1. Requested $total installations of software with packages level up to $levelIdx (-PkgLevel $PkgLevel)."
 
 $counter = 1
 foreach ($expr in $expressions) {
@@ -58,4 +58,5 @@ foreach ($expr in $expressions) {
     $counter += 1
 }
 
-Write-Output "`n  3. Software installation with choco: Done."
+Write-Output ""
+Write-Output "Software installation via Chocolatey: Done."

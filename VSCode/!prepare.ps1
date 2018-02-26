@@ -1,8 +1,8 @@
-. ".\common.ps1"
+param([switch]$LinkBack)
 
 $vsCodePath = Join-Path $env:USERPROFILE "AppData\Roaming\Code\User"
-$oneDriveBasePath = Join-Path $env:USERPROFILE "OneDrive"
-$oneDrivePath = Join-Path $oneDriveBasePath "Configurations\VS Code"
+
+. ".\common.ps1"
 
 function EnsureVSCodeAvailable {
     try {
@@ -10,8 +10,8 @@ function EnsureVSCodeAvailable {
         code --version
     }
     catch {
-        Write-Host "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        Write-Host "Please install Visual Studio Code before executing this script."
+        Write-Output "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        Write-Output "Please install Visual Studio Code before executing this script."
         throw "Environment is not ready, use: https://code.visualstudio.com/"
     }
 }
@@ -24,19 +24,31 @@ function InstallExtensionsFrom($sourceFile) {
     Invoke-Expression $command
 }
 
-function HardLinkConfigurationTo ($targetDir) {
-    MakeHardLinkTo $targetDir $PSScriptRoot "keybindings.json"
-    MakeHardLinkTo $targetDir $PSScriptRoot "settings.json"
+function PrepareVSCode {
+    Write-Output "`n  1. Installing VS Code extensions:"
+    InstallExtensionsFrom "extensions.txt"
+
+    Write-Output "`n  2. Linking configuration files to the VS Code:"
+    MakeHardLinkTo $vsCodePath $PSScriptRoot "keybindings.json"
+    MakeHardLinkTo $vsCodePath $PSScriptRoot "settings.json"
+}
+
+function HardLinkConfigBack {
+    Write-Output "`n  1. Linking configuration files from the VS Code:"
+    MakeHardLinkTo $PSScriptRoot $vsCodePath "keybindings.json" $false
+    MakeHardLinkTo $PSScriptRoot $vsCodePath "settings.json" $false
 }
 
 #######################################################################################
 
 EnsureVSCodeAvailable
 
-Write-Output "`n  1. Installing extensions:"
-InstallExtensionsFrom "extensions.txt"
+if ($LinkBack.IsPresent) {
+    HardLinkConfigBack
+}
+else {
+    PrepareVSCode
+}
 
-Write-Output "`n  2. Linking configuration files to the VS Code:"
-HardLinkConfigurationTo $vsCodePath
-
-Write-Output "`n  3. VSCode preparation: Done."
+Write-Output ""
+Write-Output "VS Code preparation: Done."
