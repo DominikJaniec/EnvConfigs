@@ -12,6 +12,8 @@ My personal environment's configuration
    * It will install defined [applications](Choco/packages.txt) according to selected packages level.
    * Optional script's parameter `-PkgLevel (core|work|full)`.
    * Default value is assumed to be: `-PkgLevel full`.
+3. Scripts have to be executed from PowerShell with elevated permissions to the Administrator Role.
+   * Execute script: [`.\Choco\!elevate.ps1`](Choco/!elevate.ps1) to obtain elevated PowerShell console.
 
 ## Text files extensions setup
 
@@ -38,5 +40,5 @@ _Assumptions and remarks:_
 
 * Headers presented above are set in proposed execution order of steps.
 * Steps expect that this Repository had been cloned under path: `~/Repos` (_Chocolatey_ excluded).
-* Every prepare script (`!prepare.ps1`) should be run from this Repository's root directory via PowerShell in elevated privileges.
+* Every prepare script (`!prepare.ps1`) should be run from this Repository's root directory via PowerShell.
 * Expecting [PowerShell](https://docs.microsoft.com/en-us/powershell/scripting/setup/installing-windows-powershell?view=powershell-6) to be in version bigger then 3 (see: `$PSVersionTable.PSVersion`).
