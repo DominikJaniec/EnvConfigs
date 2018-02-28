@@ -2,6 +2,8 @@
 
 My personal environment's configuration
 
+----
+
 ## Chocolatey & system software
 
 1. Install via script from: [Chocolatey.org](https://chocolatey.org/install)
@@ -22,7 +24,7 @@ My personal environment's configuration
 
 ## Git configuration
 
-1. Git should had been installed via [_Chocolatey_](#chocolatey--system-software).
+1. Git should had been installed via [_Chocolatey_](#chocolatey--system-software)
 2. Execute prepare script: [`.\Git\!prepare.ps1`](Git/!prepare.ps1)
    * It will hard-link configuration file ([`.gitconfig`](Git/.gitconfig)) into _Home_ directory.
    * There is an optional script's switch: `-LinkBack`. With it, script will just hard-link Git's configuration file back into this repository - because Git likes to break Hard-Links.
@@ -33,6 +35,11 @@ My personal environment's configuration
 2. Execute prepare script: [`.\VSCode\!prepare.ps1`](VSCode/!prepare.ps1)
    * It will install selected [extensions](VSCode/extensions.txt) and hard-link configuration files ([`settings.json`](VSCode/settings.json), [`keybindings.json`](VSCode/keybindings.json)) into VS Code.
    * There is an optional script's switch: `-LinkBack`. With it, script will just hard-link VS Code's configuration files back into this repository - because Git likes to break Hard-Links.
+
+## Visual Studio 2017
+
+1. Download and install from [Microsoft](https://www.visualstudio.com/pl/vs/community/)
+   * Extensions and configuration: [description](VSCommunity.md)
 
 ----
 
