@@ -41,6 +41,15 @@ My personal environment's configuration
 1. Download and install from [Microsoft](https://www.visualstudio.com/pl/vs/community/)
    * Extensions and configuration: [description](VSCommunity.md)
 
+## Additional software
+
+1. Because _Chocolatey_ is not solution for everyone, here are other applications worth to install.
+   * [**HWiNFO**](https://www.hwinfo.com/) - Comprehensive Hardware Analysis, Monitoring and Reporting for Windows and DOS.
+   * [**Code Compare**](https://www.devart.com/codecompare/) - A free tool designed to compare and merge differing files and folders.
+   * [**CapsLock Indicator**](https://github.com/jonaskohl/CapsLockIndicator) - A small utility that indicates the state of the Num lock, Caps lock and Scroll lock key.
+   * [**Free Alarm Clock**](http://freealarmclocksoftware.com/) - This freeware program allows you to set as many alarms as you want.
+   * [**Paint.NET**](https://www.getpaint.net/) - Image and photo editing software for PCs that run Windows.
+
 ----
 
 _Assumptions and remarks:_
