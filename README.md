@@ -10,36 +10,37 @@ My personal environment's configuration
     ```PowerShell
     Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
     ```
-2. Execute prepare script: [`.\Choco\!prepare.ps1`](Choco/!prepare.ps1)
-   * It will install defined [applications](Choco/packages.txt) according to selected packages level.
+2. Execute prepare script: [`> .\Choco\!prepare.ps1`](Choco/!prepare.ps1)
+   * Will install [defined applications](Choco/packages.txt) according to selected packages level.
    * Optional script's parameter `-PkgLevel (core|work|full)`.
    * Default value is assumed to be: `-PkgLevel full`.
 3. Scripts have to be executed from PowerShell with elevated permissions to the Administrator Role.
-   * Execute script: [`.\Choco\!elevate.ps1`](Choco/!elevate.ps1) to obtain elevated PowerShell console.
 
-## Text files extensions setup
+## System configuration
 
-1. Execute prepare script: [`.\TxtFiles\!prepare.ps1`](TxtFiles/!prepare.ps1)
-   * It will setup all defined [files' extensions](TxtFiles/extensions.txt) to be treated as Text-Based files.
+1. Execute prepare script: [`> .\System\!prepare.ps1`](System/!prepare.ps1)
+   * Will setup all defined [files' extensions](System/extensions.txt) to be treated as Text-Based files.
+   * Will schedule [_Process Explorer_](https://chocolatey.org/packages/procexp) to autostart on Logon of any user.
+2. Script have to be executed from PowerShell with elevated permissions to the Administrator Role.
 
 ## Git configuration
 
 1. Git should had been installed via [_Chocolatey_](#chocolatey--system-software)
-2. Execute prepare script: [`.\Git\!prepare.ps1`](Git/!prepare.ps1)
-   * It will hard-link configuration file ([`.gitconfig`](Git/.gitconfig)) into _Home_ directory.
+2. Execute prepare script: [`> .\Git\!prepare.ps1`](Git/!prepare.ps1)
+   * Will hard-link configuration file ([`.gitconfig`](Git/.gitconfig)) into _Home_ (`~/`) directory.
    * There is an optional script's switch: `-LinkBack`. With it, script will just hard-link Git's configuration file back into this repository - because Git likes to break Hard-Links.
 
 ## Visual Studio Code
 
 1. Download and install from [Microsoft](https://code.visualstudio.com/docs/?dv=win)
-2. Execute prepare script: [`.\VSCode\!prepare.ps1`](VSCode/!prepare.ps1)
-   * It will install selected [extensions](VSCode/extensions.txt) and hard-link configuration files ([`settings.json`](VSCode/settings.json), [`keybindings.json`](VSCode/keybindings.json)) into VS Code.
+2. Execute prepare script: [`> .\VSCode\!prepare.ps1`](VSCode/!prepare.ps1)
+   * Will install selected [extensions](VSCode/extensions.txt) and hard-link configuration files ([`settings.json`](VSCode/settings.json), [`keybindings.json`](VSCode/keybindings.json)) into VS Code.
    * There is an optional script's switch: `-LinkBack`. With it, script will just hard-link VS Code's configuration files back into this repository - because Git likes to break Hard-Links.
 
 ## Visual Studio 2017
 
 1. Download and install from [Microsoft](https://www.visualstudio.com/pl/vs/community/)
-   * Extensions and configuration: [description](VSCommunity.md)
+   * Extensions and configuration: [description](VSCommunity.md).
 
 ## Additional software
 
@@ -55,6 +56,7 @@ My personal environment's configuration
 _Assumptions and remarks:_
 
 * Headers presented above are set in proposed execution order of steps.
-* Steps expect that this Repository had been cloned under path: `~/Repos` (_Chocolatey_ excluded).
 * Every prepare script (`!prepare.ps1`) should be run from this Repository's root directory via PowerShell.
-* Expecting [PowerShell](https://docs.microsoft.com/en-us/powershell/scripting/setup/installing-windows-powershell?view=powershell-6) to be in version bigger then 3 (see: `$PSVersionTable.PSVersion`).
+* Steps (excluding [_Chocolatey_](#chocolatey--system-software)) expects that this Repository had been cloned under path: `~/Repos/`.
+* To obtain elevated PowerShell console, just execute: [`$#> PowerShell.exe -File ".\!elevate.ps1"`](!elevate.ps1)
+* Expecting [PowerShell](https://docs.microsoft.com/en-us/powershell/scripting/setup/installing-windows-powershell?view=powershell-6) to be in version bigger then 3, see: `$PSVersionTable.PSVersion`

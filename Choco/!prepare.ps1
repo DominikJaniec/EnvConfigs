@@ -4,12 +4,12 @@ param([string]$PkgLevel = "full")
 
 function EnsureChocoAvailable {
     try {
-        Write-Output "Software installation via Chocolatey in version:"
+        Write-Output ">> Software installation via Chocolatey in version:"
         choco --version
     }
     catch {
-        Write-Output "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        Write-Output "Please install Chocolatey before executing this script."
+        Write-Output ">> !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        Write-Output ">> Please install Chocolatey before executing this script."
         throw "Environment is not ready, use: https://chocolatey.org/install"
     }
 }
@@ -48,15 +48,14 @@ EnsureChocoAvailable
 $levelIdx = PackagesLevelToIndex $PkgLevel
 $expressions = PackagesInstallExpressionsFrom "packages.txt" $levelIdx
 $total = @($expressions).Count
-Write-Output "`n  1. Requested $total installations of software with packages level up to $levelIdx (-PkgLevel $PkgLevel)."
+Write-Output "`n>> Requested $total installations of software with packages level up to $levelIdx (-PkgLevel $PkgLevel)."
 
 $counter = 1
 foreach ($expr in $expressions) {
     $installExpression = "$($expr.Install) --confirm"
-    Write-Output "`n  2. [$counter/$total|lvl:$($expr.Level)] executing: '$installExpression'"
+    Write-Output "`n>> >> [$counter/$total|lvl:$($expr.Level)] executing: '$installExpression'"
     Invoke-Expression $installExpression
     $counter += 1
 }
 
-Write-Output ""
-Write-Output "Software installation via Chocolatey: Done."
+Write-Output "`n>> Software installation via Chocolatey: Done."
