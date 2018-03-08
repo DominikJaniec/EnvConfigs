@@ -23,12 +23,13 @@ My personal environment's configuration
    * Will schedule [_Process Explorer_](https://chocolatey.org/packages/procexp) to autostart on Logon of any user.
 2. Script have to be executed from PowerShell with elevated permissions to the Administrator Role.
 
-## Git configuration
+## Bash shell $ Git configuration
 
 1. Git should had been installed via [_Chocolatey_](#chocolatey--system-software)
-2. Execute prepare script: [`> .\Git\!prepare.ps1`](Git/!prepare.ps1)
-   * Will hard-link configuration file ([`.gitconfig`](Git/.gitconfig)) into _Home_ (`~/`) directory.
-   * There is an optional script's switch: `-LinkBack`. With it, script will just hard-link Git's configuration file back into this repository - because Git likes to break Hard-Links.
+2. Bash shell is being expected to be installed with Git
+3. Execute prepare script: [`> .\ShellGit\!prepare.ps1`](ShellGit/!prepare.ps1)
+   * Will hard-link configuration files ([`.gitconfig`](ShellGit/.gitconfig), [`.bashrc`](ShellGit/.bashrc)) into _Home_ (`~/`) directory.
+   * There is an optional script's switch: `-LinkBack`. With it, script will just hard-link configuration files back into this repository - because Git likes to break Hard-Links.
 
 ## Visual Studio Code
 
