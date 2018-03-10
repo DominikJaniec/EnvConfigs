@@ -14,21 +14,32 @@ function LoadLinesFrom($sourceDir, $sourceFile) {
         | Where-Object { -not($_.StartsWith("#")) }
 }
 
+function FilesAreSame($leftFilePath, $rightFilePath) {
+    $left = Get-Content $leftFilePath
+    $right = Get-Content $rightFilePath
+    $diff = Compare-Object $left $right
+    return [string]::IsNullOrWhiteSpace($diff)
+}
+
 function MakeHardLinkTo($targetDir, $sourceDir, $fileName, $backup = $true) {
     $linkedPath = Join-Path $targetDir $fileName
     $sourcePath = Join-Path $sourceDir $fileName
     EnsureFileExists $sourcePath
 
     if (Test-Path $linkedPath) {
-        if ($backup) {
+        if (-not($backup)) {
+            Remove-Item -Path $linkedPath
+            Write-Output "Existing file had been deleted, linked file will replace it."
+        }
+        elseif (FilesAreSame $linkedPath $sourcePath) {
+            Remove-Item -Path $linkedPath
+            Write-Output "Same existing file will be replaced by hard link."
+        }
+        else {
             $timestamp = Get-Date -Format yyyyMMdd-HHmmss
             $newPath = "$linkedPath.$timestamp.bak"
             Rename-Item -Path $linkedPath -NewName $newPath
             Write-Output "Existing file had been renamed as: '$newPath'."
-        }
-        else {
-            Remove-Item -Path $linkedPath
-            Write-Output "Existing file had been deleted, linked file will replace it."
         }
     }
 
