@@ -26,6 +26,7 @@ work|dotnetcore-sdk
 work|dotnet4.7.1
 work|nodejs-lts
 work|linqpad5.install
+full|paint.net
 work|screentogif
 work|grepwin
 work|rdcman
@@ -34,6 +35,7 @@ work|GoogleChrome
 work|firefox
 work|spotify
 
+full|docker-for-windows
 full|haskell-stack
 full|elm-platform
 full|fake --pre
@@ -44,8 +46,8 @@ full|graphviz
 full|virtualbox
 full|winscp.install
 full|miktex.install
+full|wireshark
 full|sqlitebrowser
-full|paint.net
 full|mirc
 full|vlc
 full|audacity

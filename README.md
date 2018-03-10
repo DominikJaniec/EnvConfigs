@@ -12,7 +12,7 @@ My personal environment's configuration
     ```
 2. Execute prepare script: [`> .\Choco\!prepare.ps1`](Choco/!prepare.ps1)
    * Will install [defined applications](Choco/packages.txt) according to selected packages level.
-   * Some packages or them dependencies may requires reboot after installation.
+   * Some packages or them dependencies may require reboot after installation.
    * Optional script's parameter `-PkgLevel (core|work|full)`.
    * Default value is assumed to be: `-PkgLevel full`.
 3. Scripts have to be executed from PowerShell with elevated permissions to the Administrator Role.
@@ -49,9 +49,10 @@ My personal environment's configuration
 1. Because _Chocolatey_ is not solution for everyone, here are other applications worth to install.
    * [**HWiNFO**](https://www.hwinfo.com/) - Comprehensive Hardware Analysis, Monitoring and Reporting for Windows and DOS.
    * [**Code Compare**](https://www.devart.com/codecompare/) - A free tool designed to compare and merge differing files and folders.
+   * [**Fiddler**](https://www.telerik.com/fiddler) - The free web debugging proxy for any browser, system or platform.
+   * [**dotPeek**](https://www.jetbrains.com/decompiler/) - Free .NET Decompiler and Assembly Browser (part of ReSharper).
    * [**CapsLock Indicator**](https://github.com/jonaskohl/CapsLockIndicator) - A small utility that indicates the state of the Num lock, Caps lock and Scroll lock key.
    * [**Free Alarm Clock**](http://freealarmclocksoftware.com/) - This freeware program allows you to set as many alarms as you want.
-   * [**Paint.NET**](https://www.getpaint.net/) - Image and photo editing software for PCs that run Windows.
 
 ----
 

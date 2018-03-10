@@ -53,9 +53,11 @@ Write-Output "`n>> Requested $total installations of software with packages leve
 $counter = 1
 foreach ($expr in $expressions) {
     $installExpression = "$($expr.Install) --confirm"
-    Write-Output "`n>> >> [$counter/$total|lvl:$($expr.Level)] executing: '$installExpression'"
+    Write-Output "`n##############################################################################"
+    Write-Output ">> >> [$counter/$total|lvl:$($expr.Level)] executing: '$installExpression'"
     Invoke-Expression $installExpression
     $counter += 1
 }
 
 Write-Output "`n>> Software installation via Chocolatey: Done."
+Write-Output "  -- Some packages may require reboot."
