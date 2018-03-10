@@ -1,4 +1,4 @@
-__PS_clear=`tput sgr0`
+__PS_clear="$(tput sgr0)"
 __PS_mark="${__PS_clear}$(tput setaf 9)"
 __PS_path="${__PS_clear}$(tput setaf 3; tput bold)"
 __PS_user="${__PS_clear}$(tput setaf 2; tput bold)"
@@ -41,10 +41,10 @@ function __PS_resolve_context () {
     if [ "${__PS_var__simplified}" = false  ]; then
         local git_data=$(__git_ps1)
         if [ -n "$git_data" ]; then
-            full_context+="${__PS_git_info}${git_data}"
+            full_context+="\x01${__PS_git_info}\x02${git_data}"
         fi
 
-        full_context+="${__PS_clear}\n"
+        full_context+="\x01${__PS_clear}\x02\n"
         __PS_var__timestamp=${SECONDS}
     fi
 
@@ -60,19 +60,19 @@ function __PS_print_context () {
         local user_name=${2}
         local host_name=${3}
 
-        context+="${__PS_clear}\n${__PS_mark}# ${__PS_time}${date_time}"
-        context+=" ${__PS_user}${user_name} ${__PS_host}@${host_name}"
+        context+="\x01${__PS_clear}\x02\n\x01${__PS_mark}\x02# \x01${__PS_time}\x02${date_time}"
+        context+=" \x01${__PS_user}\x02${user_name} \x01${__PS_host}\x02@${host_name}"
         context+="${__PS_var__full_context}"
     fi
 
     # Set 'Last ExitCode' standard context:
     if [ ${__PS_var__last_exticode} -eq 0 ]; then
-        context+="${__PS_exit_ok}✔"
+        context+="\x01${__PS_exit_ok}\x02✔"
     else
-        context+="${__PS_exit_err}✘ e:${__PS_var__last_exticode}"
+        context+="\x01${__PS_exit_err}\x02✘ e:${__PS_var__last_exticode}"
     fi
 
-    echo -e "\x01${context}\x02"
+    echo -e "${context}"
 }
 
 
@@ -81,4 +81,4 @@ GIT_PS1_SHOWUNTRACKEDFILES=1
 GIT_PS1_SHOWUPSTREAM="auto verbose"
 
 PROMPT_COMMAND=__PS_resolve_context
-PS1="\$(__PS_print_context '\D{%F %T}' '\u' '\H') ${__PS_path}\w ${__PS_clear}\$ "
+PS1="\$(__PS_print_context '\D{%F %T}' '\u' '\H') \[${__PS_path}\]\w \[${__PS_clear}\]\$ "
