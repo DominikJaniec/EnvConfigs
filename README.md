@@ -12,6 +12,7 @@ My personal environment's configuration
     ```
 2. Execute prepare script: [`> .\Choco\!prepare.ps1`](Choco/!prepare.ps1)
    * Will install [defined applications](Choco/packages.txt) according to selected packages level.
+   * Some packages or them dependencies may requires reboot after installation.
    * Optional script's parameter `-PkgLevel (core|work|full)`.
    * Default value is assumed to be: `-PkgLevel full`.
 3. Scripts have to be executed from PowerShell with elevated permissions to the Administrator Role.

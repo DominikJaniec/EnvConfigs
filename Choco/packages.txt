@@ -13,6 +13,7 @@ core|procexp
 core|hashcheck
 core|notepad3.install
 core|git.install
+core|psake
 core|vim
 core|f.lux
 core|ditto.install
@@ -22,6 +23,7 @@ work|hxd
 work|conemu
 work|windirstat
 work|dotnetcore-sdk
+work|dotnet4.7.1
 work|nodejs-lts
 work|linqpad5.install
 work|screentogif
@@ -43,6 +45,7 @@ full|virtualbox
 full|winscp.install
 full|miktex.install
 full|sqlitebrowser
+full|paint.net
 full|mirc
 full|vlc
 full|audacity
