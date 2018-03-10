@@ -8,20 +8,36 @@ __PS_exit_ok="${__PS_clear}$(tput setaf 2)"
 __PS_exit_err="${__PS_clear}$(tput setaf 1)"
 __PS_git_info="${__PS_clear}$(tput setaf 4; tput bold)"
 
+__PS_timestamp_staleness_sec=7
 
 __PS_var__last_exticode=1
-__PS_var__full_context=""
+__PS_var__last_history=""
+__PS_var__timestamp=0
 __PS_var__simplified=false
-# __PS_var__simplified=true
-# TODO : Dynamically switch to simplified mode, when user just rams to make some space in console.
-#        Solution idea from: https://stackoverflow.com/questions/27384748/detect-empty-command
+__PS_var__full_context=""
+
 
 function __PS_resolve_context () {
     __PS_var__last_exticode=${?}
 
-    local full_context=""
+    local current_history=`history 1`
+    # Prompt should be simplified when user rams with empty lines:
+    if [ "${__PS_var__last_history}" \< "${current_history}" ]; then
+        __PS_var__simplified=false
+        __PS_var__last_history=${current_history}
+    else
+        __PS_var__simplified=true
+        __PS_var__last_exticode=0
+    fi
 
-    # Full context should be set only when PS is not simplified:
+    local timestamp_diff=$(( ${SECONDS} - ${__PS_var__timestamp} ))
+    # Prompt should not be simplified when context is stale:
+    if [ ${timestamp_diff} -gt ${__PS_timestamp_staleness_sec} ]; then
+        __PS_var__simplified=false
+    fi
+
+    local full_context=""
+    # Full context should be set only when Prompt is not simplified:
     if [ "${__PS_var__simplified}" = false  ]; then
         local git_data=$(__git_ps1)
         if [ -n "$git_data" ]; then
@@ -29,6 +45,7 @@ function __PS_resolve_context () {
         fi
 
         full_context+="${__PS_clear}\n"
+        __PS_var__timestamp=${SECONDS}
     fi
 
     __PS_var__full_context=${full_context}
@@ -39,8 +56,13 @@ function __PS_print_context () {
 
     # Only when full context is present, set 'time-user' and full context:
     if [ -n "${__PS_var__full_context}" ]; then
-        local basic_context=${1}
-        context+="${__PS_clear}\n${basic_context}${__PS_var__full_context}"
+        local date_time=${1}
+        local user_name=${2}
+        local host_name=${3}
+
+        context+="${__PS_clear}\n${__PS_mark}# ${__PS_time}${date_time}"
+        context+=" ${__PS_user}${user_name} ${__PS_host}@${host_name}"
+        context+="${__PS_var__full_context}"
     fi
 
     # Set 'Last ExitCode' standard context:
@@ -59,4 +81,4 @@ GIT_PS1_SHOWUNTRACKEDFILES=1
 GIT_PS1_SHOWUPSTREAM="auto verbose"
 
 PROMPT_COMMAND=__PS_resolve_context
-PS1="\$(__PS_print_context '${__PS_mark}# ${__PS_time}\D{%F %T} ${__PS_user}\u ${__PS_host}@\H') ${__PS_path}\w ${__PS_clear}\$ "
+PS1="\$(__PS_print_context '\D{%F %T}' '\u' '\H') ${__PS_path}\w ${__PS_clear}\$ "
