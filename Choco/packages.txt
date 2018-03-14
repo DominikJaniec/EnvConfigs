@@ -12,7 +12,7 @@ core|sysinternals
 core|procexp
 core|hashcheck
 core|notepad3.install
-core|git.install
+core|git.install --params="'/GitAndUnixToolsOnPath /NoShellIntegration'"
 core|psake
 core|vim
 core|f.lux
@@ -26,7 +26,6 @@ work|dotnetcore-sdk
 work|dotnet4.7.1
 work|nodejs-lts
 work|linqpad5.install
-full|paint.net
 work|screentogif
 work|grepwin
 work|rdcman
@@ -42,8 +41,9 @@ full|fake --pre
 full|googledrive
 full|dropbox
 full|pdf24
+full|paint.net
 full|graphviz
-full|virtualbox
+full|virtualbox --params="'/NoDesktopShortcut /NoQuickLaunch'"
 full|winscp.install
 full|miktex.install
 full|wireshark

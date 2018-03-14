@@ -4,7 +4,7 @@ My personal environment's configuration
 
 ----
 
-## Chocolatey & system software
+## Chocolatey & System software
 
 1. Install via script from: [Chocolatey.org](https://chocolatey.org/install)
     ```PowerShell
@@ -24,12 +24,13 @@ My personal environment's configuration
    * Will schedule [_Process Explorer_](https://chocolatey.org/packages/procexp) to autostart on Logon of any user.
 2. Script have to be executed from PowerShell with elevated permissions to the Administrator Role.
 
-## Bash shell $ Git configuration
+## Bash shell & Git configuration
 
 1. Git should had been installed via [_Chocolatey_](#chocolatey--system-software)
 2. Bash shell is being expected to be installed with Git
 3. Execute prepare script: [`> .\ShellGit\!prepare.ps1`](ShellGit/!prepare.ps1)
    * Will hard-link configuration files ([`.gitconfig`](ShellGit/.gitconfig), [`.bashrc`](ShellGit/.bashrc)) into _Home_ (`~/`) directory.
+   * Will hard-link [_ConEmu_](https://chocolatey.org/packages/ConEmu)'s configuration file ([`ConEmu.xml`](ShellGit/ConEmu.xml)) into user's _AppData_ directory and add context menu entry: _Bash Shell here_ to Folders - only when _ConEmu_ is available.
    * There is an optional script's switch: `-LinkBack`. With it, script will just hard-link configuration files back into this repository - because Git likes to break Hard-Links.
 
 ## Visual Studio Code

@@ -2,6 +2,9 @@ param([switch]$LinkBack)
 
 . ".\common.ps1"
 
+$ConEmuPath = "C:\Program Files\ConEmu\ConEmu64.exe"
+$GitBashPath = "C:\Program Files\Git\git-bash.exe"
+
 function EnsureGitAvailable {
     try {
         Write-Output ">> User's configuration for Git in version:"
@@ -15,10 +18,9 @@ function EnsureGitAvailable {
 }
 
 function CheckConEmuInstalled {
-    $path = "C:\Program Files\ConEmu\ConEmu64.exe"
-    $installed = Test-Path $path
+    $installed = Test-Path $ConEmuPath
     if (-not($installed)) {
-        Write-Output "`n>> Could not find 'ConEmu', configuration skipped..."
+        Write-Output "`n>> Could not find 'ConEmu' at: '$ConEmuPath', configuration skipped..."
     }
 
     return $installed
@@ -35,6 +37,30 @@ function PrepareEnvironment {
     if (CheckConEmuInstalled) {
         Write-Output "`n>> Linking ConEmu configuration file to 'AppData` directory:"
         MakeHardLinkTo $Env:APPDATA $PSScriptRoot "ConEmu.xml"
+
+        Write-Output "`n>> Configuring Windwos context menu with Bash via ConEmu"
+        New-PSDrive -PSProvider registry -Root HKEY_CLASSES_ROOT -Name HKCR | Out-Null
+
+        $regDirectories = @("HKCR:\Directory\shell", "HKCR:\Directory\Background\shell")
+        foreach ($regKeyBase in $regDirectories) {
+            $regKey = "$regKeyBase\ViaConEmu_GitBash"
+            if (Test-Path $regKey) {
+                continue
+            }
+
+            New-Item $regKey -Value "Open &Bash here" | Out-Null
+            Set-ItemProperty $regKey Icon $GitBashPath
+
+            $command = "`"$ConEmuPath`" -Reuse -Dir `"%1`" -run {Bash::Git bash}"
+            New-Item "$regKey\command" -Value $command | Out-Null
+
+            Write-Output ">> >> Windows context menu for Bash created at: '$regKey'."
+        }
+
+        # TODO : https://github.com/Maximus5/ConEmu/issues/1478
+        # & $ConEmuPath -UpdateJumpList -Exit
+        & $ConEmuPath -UpdateJumpList -run exit
+        Write-Output ">> >> Windows ConEmu integration done."
     }
 }
 

@@ -35,12 +35,35 @@ function ScheduleProcessExplorer {
         cmd.exe /C "schtasks /Create /SC ONLOGON /TN `"$scheduleName`" /TR `"$scheduleExe /t`""
     }
 
-    Write-Output "`n>> >> Process Explorer scheduled to autostart on logon."
+    Write-Output "`n>> Process Explorer scheduled to autostart on logon."
+}
+
+function PinToQuickAccess ($directoryPath) {
+    $o = new-object -com shell.application
+    $o.Namespace($directoryPath).Self.InvokeVerb("pintohome")
+}
+
+function SetupWindowsExplorer {
+    PinToQuickAccess($Env:USERPROFILE)
+    PinToQuickAccess(Join-Path $Env:USERPROFILE "Repos")
+    Write-Output "`n>> The 'Repos' directory has been pinned to the Quick Access."
+
+    $regExplorer = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer"
+    Set-ItemProperty $regExplorer ShowFrequent 0
+    Set-ItemProperty $regExplorer ShowRecent 0
+
+    $regExplorerAdvanced = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+    Set-ItemProperty $regExplorerAdvanced HideFileExt 0
+    Set-ItemProperty $regExplorerAdvanced ShowSuperHidden 1
+    Set-ItemProperty $regExplorerAdvanced LaunchTo 1
+
+    Write-Output "`n>> Windows Explorer has been configured."
 }
 
 #######################################################################################
 
 SetTextFilesExtensions
 ScheduleProcessExplorer
+SetupWindowsExplorer
 
 Write-Output "`n>> System preparation: Done."
