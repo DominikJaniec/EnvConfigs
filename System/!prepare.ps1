@@ -13,29 +13,30 @@ function SetTextFilesExtensions () {
     $counter = 1
     foreach ($ext in $extensions) {
         $setupExpression = "assoc $ext=txtfile"
-        Write-Output "`n>> >> [$counter/$total] executing: '$setupExpression'"
+        Write-Output ">> >> [$counter/$total] executing: '$setupExpression'"
         cmd.exe /C $setupExpression
         $counter += 1
     }
+
+    Write-Output ">> All $total files extensions have been set as text files."
 }
 
-function ScheduleProcessExplorer {
-    $scheduleName = "Process Explorer - Autostart"
-    $scheduleExe = "C:\ProgramData\chocolatey\lib\procexp\tools\procexp.exe"
-
-    if (-not(Test-Path $scheduleExe)) {
-        Write-Output "`n>> Could not find Process Explorer, scheduled autostart skipped."
-        Write-Output "Tested path: '$scheduleExe'"
+function ScheduleProcessExplorer () {
+    Write-Output "`n>> Scheduling autostart of Process Explorer on user logon."
+    if (CouldNotFindForConfig "Process Explorer" $ExpectedPath_ProcessExplorer) {
         return
     }
 
-    Write-Output "`n>> Looking for schedule-task: '$scheduleName'..."
+    $scheduleName = "Process Explorer - Autostart"
+    Write-Output ">> Looking for schedule-task: '$scheduleName'..."
     cmd.exe /C "schtasks /Query /TN `"$scheduleName`""
+
     if ($LASTEXITCODE -ne 0) {
-        cmd.exe /C "schtasks /Create /SC ONLOGON /TN `"$scheduleName`" /TR `"$scheduleExe /t`""
+        Write-Output ">> Scheduling new task: '$scheduleName'"
+        cmd.exe /C "schtasks /Create /SC ONLOGON /TN `"$scheduleName`" /TR `"$ExpectedPath_ProcessExplorer /t`""
     }
 
-    Write-Output "`n>> Process Explorer scheduled to autostart on logon."
+    Write-Output ">> Process Explorer scheduled to autostart on logon."
 }
 
 function PinToQuickAccess ($directoryPath) {
@@ -43,11 +44,8 @@ function PinToQuickAccess ($directoryPath) {
     $o.Namespace($directoryPath).Self.InvokeVerb("pintohome")
 }
 
-function SetupWindowsExplorer {
-    PinToQuickAccess($Env:USERPROFILE)
-    PinToQuickAccess(Join-Path $Env:USERPROFILE "Repos")
-    Write-Output "`n>> The 'Repos' directory has been pinned to the Quick Access."
-
+function SetupWindowsExplorer () {
+    Write-Output "`n>> Fixing Windows Explorer configuration..."
     $regExplorer = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer"
     Set-ItemProperty $regExplorer ShowFrequent 0
     Set-ItemProperty $regExplorer ShowRecent 0
@@ -57,7 +55,42 @@ function SetupWindowsExplorer {
     Set-ItemProperty $regExplorerAdvanced ShowSuperHidden 1
     Set-ItemProperty $regExplorerAdvanced LaunchTo 1
 
-    Write-Output "`n>> Windows Explorer has been configured."
+    Write-Output ">> Pinning common directory to the Quick Access..."
+    PinToQuickAccess($Env:USERPROFILE)
+    PinToQuickAccess(Join-Path $Env:USERPROFILE "Repos")
+
+    Write-Output ">> Windows Explorer has been configured."
+}
+
+function SetupContextMenuWithBash () {
+    Write-Output "`n>> Configuring Windows context menu with Bash via ConEmu."
+    if (CouldNotFindForConfig "ConEmu" $ExpectedPath_ConEmu -or `
+            CouldNotFindForConfig "GitBash" $ExpectedPath_GitBash) {
+        return
+    }
+
+    New-PSDrive -PSProvider registry -Root HKEY_CLASSES_ROOT -Name HKCR | Out-Null
+    $regDirectories = @("HKCR:\Directory\shell", "HKCR:\Directory\Background\shell")
+
+    foreach ($regKeyBase in $regDirectories) {
+        $regKey = "$regKeyBase\ViaConEmu_GitBash"
+        if (Test-Path $regKey) {
+            continue
+        }
+
+        New-Item $regKey -Value "Open &Bash here" | Out-Null
+        Set-ItemProperty $regKey Icon $ExpectedPath_GitBash
+
+        $command = "`"$ExpectedPath_ConEmu`" -Reuse -Dir `"%1`" -run {Bash::Git bash}"
+        New-Item "$regKey\command" -Value $command | Out-Null
+
+        Write-Output ">> >> Windows context menu for Bash created at: '$regKey'."
+    }
+
+    & $ExpectedPath_ConEmu -UpdateJumpList -run exit
+    # & $ExpectedPath_ConEmu -UpdateJumpList -Exit
+    # TODO : https://github.com/Maximus5/ConEmu/issues/1478
+    Write-Output ">> Windows Bash via ConEmu integration done."
 }
 
 #######################################################################################
@@ -65,5 +98,6 @@ function SetupWindowsExplorer {
 SetTextFilesExtensions
 ScheduleProcessExplorer
 SetupWindowsExplorer
+SetupContextMenuWithBash
 
 Write-Output "`n>> System preparation: Done."

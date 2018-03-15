@@ -1,10 +1,23 @@
+$ExpectedPath_ProcessExplorer = "C:\ProgramData\chocolatey\lib\procexp\tools\procexp.exe"
+$ExpectedPath_GitBash = "C:\Program Files\Git\git-bash.exe"
+$ExpectedPath_ConEmu = "C:\Program Files\ConEmu\ConEmu64.exe"
+
+function CouldNotFindForConfig ($name, $fullPath) {
+    $notFound = -not(Test-Path $fullPath)
+    if ($notFound) {
+        Write-Output ">> Could not find '$name' at: '$fullPath', configuration skipped."
+    }
+
+    return $notFound
+}
+
 function EnsureFileExists ($filePath) {
     if (-not(Test-Path $filePath)) {
         throw "Could not find file under path: $filePath"
     }
 }
 
-function LoadLinesFrom($sourceDir, $sourceFile) {
+function LoadLinesFrom ($sourceDir, $sourceFile) {
     $sourceFilePath = Join-Path $sourceDir $sourceFile
     EnsureFileExists $sourceFilePath
 
@@ -14,14 +27,14 @@ function LoadLinesFrom($sourceDir, $sourceFile) {
         | Where-Object { -not($_.StartsWith("#")) }
 }
 
-function FilesAreSame($leftFilePath, $rightFilePath) {
+function FilesAreSame ($leftFilePath, $rightFilePath) {
     $left = Get-Content $leftFilePath
     $right = Get-Content $rightFilePath
     $diff = Compare-Object $left $right
     return [string]::IsNullOrWhiteSpace($diff)
 }
 
-function MakeHardLinkTo($targetDir, $sourceDir, $fileName, $backup = $true) {
+function MakeHardLinkTo ($targetDir, $sourceDir, $fileName, $backup = $true) {
     $linkedPath = Join-Path $targetDir $fileName
     $sourcePath = Join-Path $sourceDir $fileName
     EnsureFileExists $sourcePath

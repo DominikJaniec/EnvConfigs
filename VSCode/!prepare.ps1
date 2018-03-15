@@ -25,16 +25,16 @@ function InstallExtensionsFrom($sourceFile) {
 }
 
 function PrepareVSCode {
-    Write-Output "`n  1. Installing VS Code extensions:"
+    Write-Output "`n>> Installing VS Code extensions:"
     InstallExtensionsFrom "extensions.txt"
 
-    Write-Output "`n  2. Linking configuration files to the VS Code:"
+    Write-Output "`n>> Linking configuration files to the VS Code:"
     MakeHardLinkTo $vsCodePath $PSScriptRoot "keybindings.json"
     MakeHardLinkTo $vsCodePath $PSScriptRoot "settings.json"
 }
 
 function HardLinkConfigBack {
-    Write-Output "`n  1. Linking configuration files from the VS Code:"
+    Write-Output "`n>> Linking configuration files from the VS Code:"
     MakeHardLinkTo $PSScriptRoot $vsCodePath "keybindings.json" $false
     MakeHardLinkTo $PSScriptRoot $vsCodePath "settings.json" $false
 }
@@ -50,5 +50,4 @@ else {
     PrepareVSCode
 }
 
-Write-Output ""
-Write-Output "VS Code preparation: Done."
+Write-Output "`n>> VS Code preparation: Done."

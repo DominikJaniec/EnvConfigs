@@ -19,24 +19,6 @@
 .gitconfig
 .gitignore
 
-# Configurations files:
-.xml
-.json
-.cfg
-.conf
-.config
-.yaml
-.yml
-.properties
-
-# Other text files:
-.md
-.log
-.nfo
-.patch
-.diff
-.usr
-
 # Programming languages files:
 .fs
 .fsx
@@ -50,10 +32,12 @@
 .ts
 .js
 .css
-.sh
-.cmd
-.ps1
+.htm
+.html
 .sql
+.sh
+.ps1
+.cmd
 .h
 .c
 .cpp
@@ -61,3 +45,23 @@
 .rb
 .sbt
 .scala
+
+# Configurations files:
+.xml
+.json
+.cfg
+.conf
+.config
+.yaml
+.yml
+.ini
+.properties
+
+# Other text files:
+.md
+.txt
+.log
+.nfo
+.patch
+.diff
+.usr
