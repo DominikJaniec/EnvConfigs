@@ -37,8 +37,14 @@ function __PS_resolve_context () {
     fi
 
     local full_context=""
-    # Full context should be set only when Prompt is not simplified:
+    # Full context should be resolve and set only when Prompt is not simplified:
     if [ "${__PS_var__simplified}" = false  ]; then
+        if [[ -n "${ConEmuPID}" ]]; then
+            # Support for Current Directory tracking in ConEmu, see:
+            # https://conemu.github.io/en/ShellWorkDir.html#connector-ps1
+            ConEmuC -StoreCWD
+        fi
+
         local git_data=$(__git_ps1)
         if [ -n "$git_data" ]; then
             full_context+="\x01${__PS_git_info}\x02${git_data}"
