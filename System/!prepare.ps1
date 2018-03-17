@@ -57,7 +57,7 @@ function SetupWindowsExplorer () {
 
     Write-Output ">> Pinning common directory to the Quick Access..."
     PinToQuickAccess($Env:USERPROFILE)
-    PinToQuickAccess(Join-Path $Env:USERPROFILE "Repos")
+    PinToQuickAccess($ExpectedPath_Repos)
 
     Write-Output ">> Windows Explorer has been configured."
 }
@@ -93,11 +93,30 @@ function SetupContextMenuWithBash () {
     Write-Output ">> Windows Bash via ConEmu integration done."
 }
 
+function SetupReposFolderIcon {
+    Write-Output "`n>> Setting up 'Repos' directory's icon..."
+    if (CouldNotFindForConfig "Repos directory" $ExpectedPath_Repos) {
+        return
+    }
+
+    $source = Join-Path $PSScriptRoot "template_Repos"
+    $iconFile = "GitDirectory.ico"
+    $configFile = "desktop.ini"
+
+    ReplaceWitBackupAt $ExpectedPath_Repos $source $iconFile
+    ReplaceWitBackupAt $ExpectedPath_Repos $source $configFile
+    HideIt (Join-Path $ExpectedPath_Repos $iconFile)
+    HideIt (Join-Path $ExpectedPath_Repos $configFile)
+
+    Write-Output ">> 'Repos' folder's appearance changed."
+}
+
 #######################################################################################
 
 SetTextFilesExtensions
 ScheduleProcessExplorer
 SetupWindowsExplorer
 SetupContextMenuWithBash
+SetupReposFolderIcon
 
 Write-Output "`n>> System preparation: Done."

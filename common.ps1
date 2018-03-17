@@ -1,6 +1,7 @@
-$ExpectedPath_ProcessExplorer = "C:\ProgramData\chocolatey\lib\procexp\tools\procexp.exe"
-$ExpectedPath_GitBash = "C:\Program Files\Git\git-bash.exe"
-$ExpectedPath_ConEmu = "C:\Program Files\ConEmu\ConEmu64.exe"
+$ExpectedPath_ProcessExplorer = Join-Path $Env:ChocolateyInstall "lib\procexp\tools\procexp.exe"
+$ExpectedPath_GitBash = Join-Path $Env:PROGRAMFILES "Git\git-bash.exe"
+$ExpectedPath_ConEmu = Join-Path $Env:PROGRAMFILES "ConEmu\ConEmu64.exe"
+$ExpectedPath_Repos = Join-Path $Env:USERPROFILE "Repos"
 
 function CouldNotFindForConfig ($name, $fullPath) {
     $notFound = -not(Test-Path $fullPath)
@@ -11,7 +12,7 @@ function CouldNotFindForConfig ($name, $fullPath) {
     return $notFound
 }
 
-function EnsureFileExists ($filePath) {
+function EnsurePathExists ($filePath) {
     if (-not(Test-Path $filePath)) {
         throw "Could not find file under path: $filePath"
     }
@@ -19,42 +20,77 @@ function EnsureFileExists ($filePath) {
 
 function LoadLinesFrom ($sourceDir, $sourceFile) {
     $sourceFilePath = Join-Path $sourceDir $sourceFile
-    EnsureFileExists $sourceFilePath
+    EnsurePathExists $sourceFilePath
 
-    return Get-Content $sourceFilePath `
+    return Get-Content $sourceFilePath -Force `
         | ForEach-Object { $_.trim() } `
         | Where-Object { $_ -ne "" } `
         | Where-Object { -not($_.StartsWith("#")) }
 }
 
-function FilesAreSame ($leftFilePath, $rightFilePath) {
-    $left = Get-Content $leftFilePath
-    $right = Get-Content $rightFilePath
-    $diff = Compare-Object $left $right
-    return [string]::IsNullOrWhiteSpace($diff)
+function AreSameFiles ($leftFilePath, $rightFilePath) {
+    $left = Get-Content $leftFilePath -Force
+    $right = Get-Content $rightFilePath -Force
+    if (Compare-Object $left $right) {
+        return $false
+    }
+    else {
+        return $true
+    }
+}
+
+function RenameFileAsTimestamptedBackup ($filePath) {
+    $timestamp = Get-Date -Format yyyyMMdd-HHmmss
+    $newPath = "$filePath.$timestamp.bak"
+
+    Rename-Item -Path $filePath -NewName $newPath -Force
+    Write-Output "Existing file had been renamed as backup: '$newPath'."
 }
 
 function MakeHardLinkTo ($targetDir, $sourceDir, $fileName, $backup = $true) {
     $linkedPath = Join-Path $targetDir $fileName
     $sourcePath = Join-Path $sourceDir $fileName
-    EnsureFileExists $sourcePath
+    EnsurePathExists $sourcePath
 
     if (Test-Path $linkedPath) {
         if (-not($backup)) {
-            Remove-Item -Path $linkedPath
-            Write-Output "Existing file had been deleted, linked file will replace it."
+            Remove-Item -Path $linkedPath -Force
+            Write-Output "Existing file ('$fileName') had been deleted, linked file will replace it."
         }
-        elseif (FilesAreSame $linkedPath $sourcePath) {
-            Remove-Item -Path $linkedPath
-            Write-Output "Same existing file will be replaced by hard link."
+        elseif (AreSameFiles $linkedPath $sourcePath) {
+            Remove-Item -Path $linkedPath -Force
+            Write-Output "Same existing file ('$fileName') will be replaced by hard link."
         }
         else {
-            $timestamp = Get-Date -Format yyyyMMdd-HHmmss
-            $newPath = "$linkedPath.$timestamp.bak"
-            Rename-Item -Path $linkedPath -NewName $newPath
-            Write-Output "Existing file had been renamed as: '$newPath'."
+            RenameFileAsTimestamptedBackup $linkedPath
         }
     }
 
     cmd.exe /C mklink /H "$linkedPath" "$sourcePath"
+}
+
+function ReplaceWitBackupAt ($targetDir, $sourceDir, $fileName) {
+    $targetPath = Join-Path $targetDir $fileName
+    $sourcePath = Join-Path $sourceDir $fileName
+    EnsurePathExists $sourcePath
+
+    if (Test-Path $targetPath) {
+        if (AreSameFiles $targetPath $sourcePath) {
+            Write-Output "Target file ('$fileName') is same as source - Replacement skipped."
+            return
+        }
+        else {
+            RenameFileAsTimestamptedBackup $targetPath
+        }
+    }
+
+    Copy-Item -Path $sourcePath -Destination $targetPath -Force
+}
+
+function HideIt ($path) {
+    EnsurePathExists $path
+    Get-Item $path -Force `
+        | ForEach-Object {
+        $_.Attributes = $_.Attributes -bor "Hidden"
+    }
 }

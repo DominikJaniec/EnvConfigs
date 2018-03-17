@@ -21,8 +21,9 @@ My personal environment's configuration
 
 1. Execute prepare script: [`> .\System\!prepare.ps1`](System/!prepare.ps1)
    * Will setup all defined [files' extensions](System/extensions.txt) to be treated as Text-Based files.
-   * Will schedule [_Process Explorer_](https://chocolatey.org/packages/procexp) to autostart on Logon of any user.
-   * Will setup context menu entry: _Open Bash here_ at Folders - only when _ConEmu_ is available.
+   * Will schedule [_Process Explorer_](https://chocolatey.org/packages/procexp) to start on _Logon_ of any user.
+   * Will setup context menu entry: _Open Bash here_ at Folders - only when [_CCnEmu_](https://chocolatey.org/packages/ConEmu) is available.
+   * Will fix Windows Explorer configuration and setup Quick Access standard folders.
 2. Script have to be executed from PowerShell with elevated permissions to the Administrator Role.
 
 ## Bash Shell & Git configuration
