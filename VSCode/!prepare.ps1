@@ -1,8 +1,8 @@
 param([switch]$LinkBack)
 
-$vsCodePath = Join-Path $env:USERPROFILE "AppData\Roaming\Code\User"
-
 . ".\common.ps1"
+
+$VSCodeProfile = Join-Path $env:USERPROFILE "AppData\Roaming\Code\User"
 
 function EnsureVSCodeAvailable {
     try {
@@ -29,14 +29,14 @@ function PrepareVSCode {
     InstallExtensionsFrom "extensions.txt"
 
     Write-Output "`n>> Linking configuration files to the VS Code:"
-    MakeHardLinkTo $vsCodePath $PSScriptRoot "keybindings.json"
-    MakeHardLinkTo $vsCodePath $PSScriptRoot "settings.json"
+    MakeHardLinkTo $VSCodeProfile $PSScriptRoot "keybindings.json"
+    MakeHardLinkTo $VSCodeProfile $PSScriptRoot "settings.json"
 }
 
 function HardLinkConfigBack {
     Write-Output "`n>> Linking configuration files from the VS Code:"
-    MakeHardLinkTo $PSScriptRoot $vsCodePath "keybindings.json" $false
-    MakeHardLinkTo $PSScriptRoot $vsCodePath "settings.json" $false
+    MakeHardLinkTo $PSScriptRoot $VSCodeProfile "keybindings.json" $false
+    MakeHardLinkTo $PSScriptRoot $VSCodeProfile "settings.json" $false
 }
 
 #######################################################################################

@@ -1,7 +1,5 @@
-$ExpectedPath_ProcessExplorer = Join-Path $Env:ChocolateyInstall "lib\procexp\tools\procexp.exe"
 $ExpectedPath_GitBash = Join-Path $Env:PROGRAMFILES "Git\git-bash.exe"
 $ExpectedPath_ConEmu = Join-Path $Env:PROGRAMFILES "ConEmu\ConEmu64.exe"
-$ExpectedPath_Repos = Join-Path $Env:USERPROFILE "Repos"
 
 function CouldNotFindForConfig ($name, $fullPath) {
     $notFound = -not(Test-Path $fullPath)

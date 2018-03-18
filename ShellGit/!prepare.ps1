@@ -2,7 +2,6 @@ param([switch]$LinkBack)
 
 . ".\common.ps1"
 
-
 function EnsureGitAvailable {
     try {
         Write-Output ">> User's configuration for Git in version:"
@@ -14,7 +13,6 @@ function EnsureGitAvailable {
         throw "Environment is not ready, use: https://git-scm.com/"
     }
 }
-
 
 function SetupGitConfiguration {
     Write-Output "`n>> Linking Git configuration file in Home directory:"

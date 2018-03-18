@@ -1,5 +1,8 @@
 . ".\common.ps1"
 
+$ReposDirectory = Join-Path $Env:USERPROFILE "Repos"
+$ProcessExplorer = Join-Path $Env:ChocolateyInstall "lib\procexp\tools\procexp.exe"
+
 function TextFilesExtensionsFrom($sourceFile) {
     return LoadLinesFrom $PSScriptRoot $sourceFile `
         | ForEach-Object { "$_".Trim() }
@@ -23,7 +26,7 @@ function SetTextFilesExtensions () {
 
 function ScheduleProcessExplorer () {
     Write-Output "`n>> Scheduling autostart of Process Explorer on user logon."
-    if (CouldNotFindForConfig "Process Explorer" $ExpectedPath_ProcessExplorer) {
+    if (CouldNotFindForConfig "Process Explorer" $ProcessExplorer) {
         return
     }
 
@@ -33,7 +36,7 @@ function ScheduleProcessExplorer () {
 
     if ($LASTEXITCODE -ne 0) {
         Write-Output ">> Scheduling new task: '$scheduleName'"
-        cmd.exe /C "schtasks /Create /SC ONLOGON /TN `"$scheduleName`" /TR `"$ExpectedPath_ProcessExplorer /t`""
+        cmd.exe /C "schtasks /Create /SC ONLOGON /TN `"$scheduleName`" /TR `"$ProcessExplorer /t`""
     }
 
     Write-Output ">> Process Explorer scheduled to autostart on logon."
@@ -57,7 +60,7 @@ function SetupWindowsExplorer () {
 
     Write-Output ">> Pinning common directory to the Quick Access..."
     PinToQuickAccess($Env:USERPROFILE)
-    PinToQuickAccess($ExpectedPath_Repos)
+    PinToQuickAccess($ReposDirectory)
 
     Write-Output ">> Windows Explorer has been configured."
 }
@@ -95,7 +98,7 @@ function SetupContextMenuWithBash () {
 
 function SetupReposFolderIcon {
     Write-Output "`n>> Setting up 'Repos' directory's icon..."
-    if (CouldNotFindForConfig "Repos directory" $ExpectedPath_Repos) {
+    if (CouldNotFindForConfig "Repos directory" $ReposDirectory) {
         return
     }
 
@@ -103,10 +106,10 @@ function SetupReposFolderIcon {
     $iconFile = "GitDirectory.ico"
     $configFile = "desktop.ini"
 
-    ReplaceWitBackupAt $ExpectedPath_Repos $source $iconFile
-    ReplaceWitBackupAt $ExpectedPath_Repos $source $configFile
-    HideIt (Join-Path $ExpectedPath_Repos $iconFile)
-    HideIt (Join-Path $ExpectedPath_Repos $configFile)
+    ReplaceWitBackupAt $ReposDirectory $source $iconFile
+    ReplaceWitBackupAt $ReposDirectory $source $configFile
+    HideIt (Join-Path $ReposDirectory $iconFile)
+    HideIt (Join-Path $ReposDirectory $configFile)
 
     Write-Output ">> 'Repos' folder's appearance changed."
 }
