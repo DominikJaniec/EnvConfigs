@@ -5,6 +5,7 @@
 #
 
 donjayamanne.githistory
+eamodio.gitlens
 hoovercj.haskell-linter
 Ionide.Ionide-fsharp
 ms-vscode.csharp
@@ -14,4 +15,6 @@ sbrink.elm
 streetsidesoftware.code-spell-checker
 Vans.haskero
 vscodevim.vim
-yzane.markdown-pdf
+yzhang.markdown-all-in-one
+DavidAnson.vscode-markdownlint
+DotJoshJohnson.xml
