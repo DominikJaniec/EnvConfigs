@@ -92,3 +92,14 @@ function HideIt ($path) {
         $_.Attributes = $_.Attributes -bor "Hidden"
     }
 }
+
+function DumpObject ($obj, $name = "Given object") {
+    if ($obj -eq $null) {
+        Write-Host "===// Dump '$name' as NULL ===\\"
+    }
+    else {
+        Write-Host "===// Dump '$name' of type: $($obj.GetType())"
+        Write-Host ($obj | Format-Table | Out-String) -NoNewline
+        Write-Host "===\\"
+    }
+}
