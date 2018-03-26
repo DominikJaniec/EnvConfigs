@@ -1,5 +1,11 @@
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+$PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
+
 $ExpectedPath_GitBash = Join-Path $Env:PROGRAMFILES "Git\git-bash.exe"
 $ExpectedPath_ConEmu = Join-Path $Env:PROGRAMFILES "ConEmu\ConEmu64.exe"
+$ProfilePath_Repos = Join-Path $Env:USERPROFILE "Repos"
+$ProfilePath_VMs = Join-Path $Env:USERPROFILE "Virtual Machines"
 
 function CouldNotFindForConfig ($name, $fullPath) {
     $notFound = -not(Test-Path $fullPath)
@@ -10,9 +16,9 @@ function CouldNotFindForConfig ($name, $fullPath) {
     return $notFound
 }
 
-function EnsurePathExists ($filePath) {
-    if (-not(Test-Path $filePath)) {
-        throw "Could not find file under path: $filePath"
+function EnsurePathExists ($path) {
+    if (-not(Test-Path $path)) {
+        throw "Could not find anything under path: $path"
     }
 }
 
@@ -37,12 +43,12 @@ function AreSameFiles ($leftFilePath, $rightFilePath) {
     }
 }
 
-function RenameFileAsTimestamptedBackup ($filePath) {
+function RenameAsTimestamptedBackup ($filePath) {
     $timestamp = Get-Date -Format yyyyMMdd-HHmmss
     $newPath = "$filePath.$timestamp.bak"
 
     Rename-Item -Path $filePath -NewName $newPath -Force
-    Write-Output "Existing file had been renamed as backup: '$newPath'."
+    Write-Output "Existing path had been renamed as backup: '$newPath'."
 }
 
 function MakeHardLinkTo ($targetDir, $sourceDir, $fileName, $backup = $true) {
@@ -60,7 +66,7 @@ function MakeHardLinkTo ($targetDir, $sourceDir, $fileName, $backup = $true) {
             Write-Output "Same existing file ('$fileName') will be replaced by hard link."
         }
         else {
-            RenameFileAsTimestamptedBackup $linkedPath
+            RenameAsTimestamptedBackup $linkedPath
         }
     }
 
@@ -78,7 +84,7 @@ function ReplaceWitBackupAt ($targetDir, $sourceDir, $fileName) {
             return
         }
         else {
-            RenameFileAsTimestamptedBackup $targetPath
+            RenameAsTimestamptedBackup $targetPath
         }
     }
 

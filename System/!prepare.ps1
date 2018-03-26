@@ -1,6 +1,5 @@
 . ".\common.ps1"
 
-$ReposDirectory = Join-Path $Env:USERPROFILE "Repos"
 $ProcessExplorer = Join-Path $Env:ChocolateyInstall "lib\procexp\tools\procexp.exe"
 
 function TextFilesExtensionsFrom($sourceFile) {
@@ -60,7 +59,7 @@ function SetupWindowsExplorer () {
 
     Write-Output ">> Pinning common directory to the Quick Access..."
     PinToQuickAccess($Env:USERPROFILE)
-    PinToQuickAccess($ReposDirectory)
+    PinToQuickAccess($ProfilePath_Repos)
 
     Write-Output ">> Windows Explorer has been configured."
 }
@@ -98,7 +97,7 @@ function SetupContextMenuWithBash () {
 
 function SetupReposFolderIcon {
     Write-Output "`n>> Setting up 'Repos' directory's icon..."
-    if (CouldNotFindForConfig "Repos directory" $ReposDirectory) {
+    if (CouldNotFindForConfig "Repos directory" $ProfilePath_Repos) {
         return
     }
 
@@ -106,10 +105,10 @@ function SetupReposFolderIcon {
     $iconFile = "GitDirectory.ico"
     $configFile = "desktop.ini"
 
-    ReplaceWitBackupAt $ReposDirectory $source $iconFile
-    ReplaceWitBackupAt $ReposDirectory $source $configFile
-    HideIt (Join-Path $ReposDirectory $iconFile)
-    HideIt (Join-Path $ReposDirectory $configFile)
+    ReplaceWitBackupAt $ProfilePath_Repos $source $iconFile
+    ReplaceWitBackupAt $ProfilePath_Repos $source $configFile
+    HideIt (Join-Path $ProfilePath_Repos $iconFile)
+    HideIt (Join-Path $ProfilePath_Repos $configFile)
 
     Write-Output ">> 'Repos' folder's appearance changed."
 }
