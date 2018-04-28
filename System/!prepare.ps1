@@ -84,7 +84,7 @@ function SetupContextMenuWithBash () {
         New-Item $regKey -Value "Open &Bash here" | Out-Null
         Set-ItemProperty $regKey Icon $ExpectedPath_GitBash
 
-        $command = "`"$ExpectedPath_ConEmu`" -Reuse -Dir `"%1`" -run {Bash::Git bash}"
+        $command = "`"$ExpectedPath_ConEmu`" -NoSingle -Dir `"%1`" -run {Bash::Git bash}"
         New-Item "$regKey\command" -Value $command | Out-Null
 
         Write-Output ">> >> Windows context menu for Bash created at: '$regKey'."
