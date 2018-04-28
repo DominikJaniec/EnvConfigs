@@ -11,6 +11,8 @@ core|7zip.install
 core|sysinternals
 core|procexp
 core|hashcheck
+core|cpu-z
+core|gpu-z
 core|notepad3.install
 core|git.install --params="'/GitAndUnixToolsOnPath /NoShellIntegration'"
 core|psake
