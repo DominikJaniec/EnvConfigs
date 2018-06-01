@@ -11,10 +11,8 @@ core|7zip.install
 core|sysinternals
 core|procexp
 core|hashcheck
-core|gpg4win-vanilla
 core|ditto.install
 core|notepad3.install
-core|vim
 core|git.install --params="'/GitAndUnixToolsOnPath /NoShellIntegration'"
 core|putty.install
 

@@ -6,6 +6,9 @@
 [apply]
     whitespace = fix
 
+[commit]
+    gpgSign = true
+
 [core]
     autocrlf = true
     editor = vim
@@ -31,7 +34,7 @@
 [alias]
     ad = add -A
     df = diff
-    dt = difftool
+    dt = difftool --tool=codecompare
     lo = log --oneline --graph -9
     mt = mergetool
     st = status
@@ -50,13 +53,15 @@
     fire-fire-fire = !sh ~/Repos/git-fire/git-fire
     visualize = !start gitk --all
 
-    settool-codecompare = !git config --local diff.tool codecompare && git config --local merge.tool codecompare
-    settool-meld = !git config --local diff.tool codecompare && git config --local merge.tool meld
-    settool-vim = !git config --local diff.tool vim && git config --local merge.tool vim
-    settool-visualstudio = !git config --local diff.tool visualstudio && git config --local merge.tool visualstudio
-    settool-vscode = !git config --local diff.tool vscode && git config --local merge.tool vscode
-    setuser-private = !git config --local user.email dominikjaniec@gmail.com && git config --local user.name \"Dominik Janiec\"
-    setuser-work = !git config --local user.email dominik.janiec@medius-group.pl && git config --local user.name \"Dominik Janiec\"
+    set-sign-on = !git config --local commit.gpgSign true
+    set-sign-off = !git config --local commit.gpgSign false
+    set-tool-codecompare = !git config --local diff.tool codecompare && git config --local merge.tool codecompare
+    set-tool-meld = !git config --local diff.tool codecompare && git config --local merge.tool meld
+    set-tool-vim = !git config --local diff.tool vim && git config --local merge.tool vim
+    set-tool-visualstudio = !git config --local diff.tool visualstudio && git config --local merge.tool visualstudio
+    set-tool-vscode = !git config --local diff.tool vscode && git config --local merge.tool vscode
+    set-user-private = !git config --local user.email dominikjaniec@gmail.com && git config --local user.name \"Dominik Janiec\"
+    set-user-work = !git config --local user.email dominik.janiec@medius-group.pl && git config --local user.name \"Dominik Janiec\"
 
 
 [difftool "codecompare"]
