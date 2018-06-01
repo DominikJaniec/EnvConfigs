@@ -11,18 +11,19 @@ core|7zip.install
 core|sysinternals
 core|procexp
 core|hashcheck
-core|cpu-z
-core|gpu-z
-core|notepad3.install
-core|git.install --params="'/GitAndUnixToolsOnPath /NoShellIntegration'"
-core|psake
-core|vim
-core|f.lux
+core|gpg4win-vanilla
 core|ditto.install
+core|notepad3.install
+core|vim
+core|git.install --params="'/GitAndUnixToolsOnPath /NoShellIntegration'"
 core|putty.install
 
 work|hxd
+work|cpu-z
+work|gpu-z
 work|conemu
+work|psake
+work|f.lux
 work|windirstat
 work|dotnetcore-sdk
 work|dotnet4.7.1
@@ -32,7 +33,7 @@ work|screentogif
 work|grepwin
 work|rdcman
 work|adobereader
-work|GoogleChrome
+work|googlechrome
 work|firefox
 work|spotify
 
@@ -40,7 +41,7 @@ full|docker-for-windows
 full|haskell-stack
 full|elm-platform
 full|fake --pre
-full|googledrive
+full|google-backup-and-sync
 full|dropbox
 full|pdf24
 full|paint.net
@@ -53,7 +54,7 @@ full|sqlitebrowser
 full|mirc
 full|vlc
 full|audacity
-full|exiftool
+full|exiftoolgui
 full|tagscanner
 full|stellarium
 full|youtube-dl

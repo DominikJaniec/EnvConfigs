@@ -10,6 +10,7 @@ My personal environment's configuration
     ```PowerShell
     Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
     ```
+    * You might also like to turn on feature [_Use Remembered Arguments For Upgrades_](https://chocolatey.org/docs/chocolatey-configuration#general-2) by executing: `$#> choco feature enable --name=useRememberedArgumentsForUpgrades`
 2. Execute prepare script: [`> .\Choco\!prepare.ps1`](Choco/!prepare.ps1)
    * Will install [defined applications](Choco/packages.txt) according to selected packages level.
    * Some packages or them dependencies may require reboot after installation.
