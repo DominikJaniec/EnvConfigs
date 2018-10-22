@@ -14,6 +14,14 @@ function EnsureChocoAvailable {
     }
 }
 
+function EnableRememberedArguments {
+    Write-Output ">> Enabling Chocolatey's feature: Use Remembered Arguments For Upgrades..."
+    choco feature enable -n useRememberedArgumentsForUpgrades
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not enable feature 'useRememberedArgumentsForUpgrades'"
+    }
+}
+
 function PackagesLevelToIndex($pkgLevel) {
     $empty = ""
     switch ("$pkgLevel".ToLower().Trim()) {
@@ -28,11 +36,13 @@ function PackagesLevelToIndex($pkgLevel) {
 }
 
 function MakeChocoExpression ($packageInstallLine) {
-    $expr = @{}
     $parts = "$packageInstallLine".Split("|");
-    $expr.Level = PackagesLevelToIndex $parts[0].Trim()
-    $expr.Install = "choco install $($parts[1].Trim())"
-    return $expr
+    $lvl = $parts[0].Trim()
+    $pkg = $parts[1].Trim()
+    return @{
+        Level   = PackagesLevelToIndex $lvl;
+        Install = "choco install $pkg --confirm"
+    }
 }
 
 function PackagesInstallExpressionsFrom ($sourceFile, $levelIdx) {
@@ -44,6 +54,7 @@ function PackagesInstallExpressionsFrom ($sourceFile, $levelIdx) {
 #######################################################################################
 
 EnsureChocoAvailable
+EnableRememberedArguments
 
 $levelIdx = PackagesLevelToIndex $PkgLevel
 $expressions = PackagesInstallExpressionsFrom "packages.txt" $levelIdx
@@ -52,12 +63,12 @@ Write-Output "`n>> Requested $total installations of software with packages leve
 
 $counter = 1
 foreach ($expr in $expressions) {
-    $installExpression = "$($expr.Install) --confirm"
     Write-Output "`n##############################################################################"
-    Write-Output ">> >> [$counter/$total|lvl:$($expr.Level)] executing: '$installExpression'"
-    Invoke-Expression $installExpression
+    Write-Output ">> >> [$counter/$total|lvl:$($expr.Level)] executing: $($expr.Install)"
+    Invoke-Expression $expr.Install
     $counter += 1
 }
 
-Write-Output "`n>> Software installation via Chocolatey: Done."
+Write-Output "`n##############################################################################"
+Write-Output ">> Software installation via Chocolatey: Done."
 Write-Output "  -- Some packages may require reboot."

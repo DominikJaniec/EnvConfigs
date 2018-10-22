@@ -10,18 +10,18 @@
 core|7zip.install
 core|sysinternals
 core|procexp
-core|hashcheck
 core|ditto.install
 core|notepad3.install
-core|git.install --params="'/GitAndUnixToolsOnPath /NoShellIntegration'"
+core|git.install --package-parameters="'/GitAndUnixToolsOnPath /NoShellIntegration'"
 core|putty.install
 
 work|hxd
-work|cpu-z
+work|cpu-z.install
 work|gpu-z
 work|conemu
+work|powershell-core --install-arguments="'ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1'"
 work|psake
-work|f.lux
+work|f.lux.install
 work|windirstat
 work|dotnetcore-sdk
 work|dotnet4.7.1
@@ -30,7 +30,7 @@ work|linqpad5.install
 work|screentogif
 work|grepwin
 work|rdcman
-work|adobereader
+work|adobereader --package-parameters="'/RemoveDesktopIcons'"
 work|googlechrome
 work|firefox
 work|spotify
@@ -38,23 +38,28 @@ work|spotify
 full|docker-for-windows
 full|haskell-stack
 full|elm-platform
-full|fake --pre
+full|paket
+full|fake
 full|google-backup-and-sync
 full|dropbox
 full|pdf24
 full|paint.net
+full|inkscape
 full|graphviz
-full|virtualbox --params="'/NoDesktopShortcut /NoQuickLaunch'"
+full|virtualbox --package-parameters="'/NoDesktopShortcut /NoQuickLaunch'"
 full|winscp.install
 full|miktex.install
+full|nmap
 full|wireshark
 full|sqlitebrowser
 full|mirc
 full|vlc
 full|audacity
+full|exiftool
 full|exiftoolgui
 full|tagscanner
 full|stellarium
+full|googleearth
 full|youtube-dl
 full|qbittorrent
 full|chocolateygui
