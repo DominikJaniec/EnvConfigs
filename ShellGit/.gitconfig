@@ -2,7 +2,6 @@
     name = Dominik Janiec
     email = dominikjaniec@gmail.com
 
-
 [apply]
     whitespace = fix
 
@@ -32,36 +31,48 @@
 
 
 [alias]
-    ad = add -A
-    df = diff
-    dt = difftool --tool=codecompare
-    lo = log --oneline --graph -9
-    mt = mergetool
     st = status
-    last = show --format=fuller --name-status
+    df = diff
+    ad = add -A
+    cm = commit -m
+    co = checkout
+    dt = difftool -t vscode
+    mt = mergetool -t vscode
+    lo = !git looog -9
     looog = log --oneline --graph
-    hidden = !git ls-files -v | grep "^[^H] "
-    recommit = commit --amend --reset-author
-    recommit-just-do-it = !git recommit --no-edit
-    ignore-for = !sh -c 'curl --output .gitignore --fail \"https://raw.githubusercontent.com/github/gitignore/master/$0.gitignore\"'
-    ignore-for-vs = !git ignore-for VisualStudio
-    put-aside-drop-all = !sh -c 'git for-each-ref --format=\"%(refname:short)\" refs/heads/_aside/\\* | xargs git branch -D'
-    put-aside-under = !sh -c 'git checkout -b \"_aside/$0\" >> /dev/null 2> /dev/null && echo \"Put aside under: $(git rev-parse --abbrev-ref HEAD) as:\" && git save-as \"$0\" && git checkout -'
-    put-aside = !sh -c 'git put-aside-under \"$(date +%Y-%m-%d_%H-%M)\"'
-    save-as = !sh -c 'git commit -m \"SAVE: $0 [staged]\" >> /dev/null || true && git add -A >> /dev/null && git commit -m \"SAVE: $0 [working]\" >> /dev/null || true && git log --oneline -3'
-    save = !git save-as \"Fast & temporay commit!\"
+    visualise-git = !start gitk --all
+    branches = branch --format=%(refname:short) --list
+    details = show --format=fuller --show-signature --summary --stat --stat-width=140 --stat-graph-width=20
     fire-fire-fire = !sh ~/Repos/git-fire/git-fire
-    visualize = !start gitk --all
+    ignore-for = !sh -c 'curl --output .gitignore --fail \"https://raw.githubusercontent.com/github/gitignore/master/$0.gitignore\"'
+    ignore-for-visualstudio = !git ignore-for VisualStudio
+    recommit = commit --amend --reset-author
+    recommit-do-it = !git recommit --no-edit
+    save-as = !sh -c 'git cm \"SAVE: $0 [staged]\" --no-gpg-sign >> /dev/null || true && git ad >> /dev/null 2>> /dev/null && git cm \"SAVE: $0 [changes]\" --no-gpg-sign >> /dev/null || true && git looog -3'
+    save = !sh -c 'git save-as \"Temporary commit on $(date \"+%Y-%m-%d %H:%M\")\"'
+    hidden = !git ls-files -v | grep \"^[^H] \"
+    hid-give = update-index --skip-worktree
+    hid-recall = update-index --no-skip-worktree
+    asided = !git branches _aside/*
+    aside-under = !sh -c 'git co -b \"_aside/$0\" >> /dev/null && echo \"Put aside under: _aside/$0 as commits:\" && git save-as \"$0\" && git co -'
+    aside = !sh -c 'git aside-under \"$(date +%Y-%m-%d_%H-%M)\"'
+    marked = !git branches _mark/*
+    mark-with = !sh -c 'git branch \"_mark/$0\" && echo \"Marked HEAD with _mark/$0 branch.\"'
+    mark = !sh -c 'git mark-with \"$(date +%Y-%m-%d_%H-%M)\"'
+    drop-untracked = !sh -c 'git st --porcelain | grep \"^?? \" | cut -d\" \" -f2- | xargs -r rm -Rv --'
+    drop-branches = !sh -c 'echo \"Beware! Will drop (pass --force) branches matching to: $0\" && git branches \"$0\" | xargs -r git branch -d $1'
+    drop-asided = !git drop-branches _aside/*
+    drop-marked = !git drop-branches _mark/*
 
     set-sign-on = !git config --local commit.gpgSign true
     set-sign-off = !git config --local commit.gpgSign false
+    set-user-private = !git config --local user.email dominikjaniec@gmail.com && git config --local user.name \"Dominik Janiec\"
+    set-user-work = !git config --local user.email dominik.janiec@medius-group.pl && git config --local user.name \"Dominik Janiec\"
     set-tool-codecompare = !git config --local diff.tool codecompare && git config --local merge.tool codecompare
     set-tool-meld = !git config --local diff.tool codecompare && git config --local merge.tool meld
     set-tool-vim = !git config --local diff.tool vim && git config --local merge.tool vim
     set-tool-visualstudio = !git config --local diff.tool visualstudio && git config --local merge.tool visualstudio
     set-tool-vscode = !git config --local diff.tool vscode && git config --local merge.tool vscode
-    set-user-private = !git config --local user.email dominikjaniec@gmail.com && git config --local user.name \"Dominik Janiec\"
-    set-user-work = !git config --local user.email dominik.janiec@medius-group.pl && git config --local user.name \"Dominik Janiec\"
 
 
 [difftool "codecompare"]
