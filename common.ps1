@@ -85,10 +85,10 @@ function ReplaceWitBackupAt ($targetDir, $sourceDir, $fileName) {
     Copy-Item -Path $sourcePath -Destination $targetPath -Force
 }
 
-function HideIt ($path) {
+function SetAttributesOf ($path, [System.IO.FileAttributes]$attributes) {
     EnsurePathExists $path
-    Get-Item $path -Force `
-        | ForEach-Object {
-        $_.Attributes = $_.Attributes -bor "Hidden"
-    }
+
+    $item = Get-Item $path -Force
+    $value = $item.Attributes
+    $item.Attributes = $value -bOR $attributes
 }

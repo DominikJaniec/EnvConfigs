@@ -46,7 +46,7 @@ My personal environment's configuration
    * Will fix _Explorer's_ configuration and setup [_Quick Access_](https://support.microsoft.com/en-us/help/4027032/windows-pin-remove-and-customize-in-quick-access) with a few handy folders.
    * Will ~~cleanup context menu for folders with unnecessary entries.~~ (not yet implemented)
    * Will setup context menu entry: _Open Bash here_ at folders. When [_ConEmu_](https://chocolatey.org/packages/ConEmu) and _Bash_ from _Git_ are available.
-   * Will ~~embellish current user's directory `~/Repos` with appropriate [icon](System/template_Repos/GitDirectory.png) for _Git_.~~ (not working)
+   * Will embellish current user's directory `~/Repos` with appropriate [icon](System/template_Repos/GitDirectory.png) for _Git_.
 
 ## Visual Studio Code
 

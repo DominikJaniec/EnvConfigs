@@ -11,7 +11,7 @@ function TextFilesExtensionsFrom($sourceFile) {
 function SetTextFilesExtensions () {
     $extensions = TextFilesExtensionsFrom "extensions.txt"
     $total = @($extensions).Count
-    Write-Output "`n>> Requested $total extensions of files which will be treated as text-based files."
+    Write-Output "`n>> Requested $total extensions of files which will be treated as Text-Based files."
 
     $counter = 1
     foreach ($ext in $extensions) {
@@ -43,8 +43,13 @@ function ScheduleProcessExplorer () {
 }
 
 function PinToQuickAccess ($directoryPath) {
-    $o = new-object -com shell.application
-    $o.Namespace($directoryPath).Self.InvokeVerb("pintohome")
+    if (Test-Path $directoryPath) {
+        return
+    }
+
+    $x = New-Object -ComObject "Shell.Application"
+    $x.NameSpace($directoryPath).Self.InvokeVerb("pintohome")
+    Write-Output ">> >> Pinned to the Quick Access: $directoryPath"
 }
 
 function SetupWindowsExplorer () {
@@ -58,7 +63,7 @@ function SetupWindowsExplorer () {
     Set-ItemProperty $regExplorerAdvanced ShowSuperHidden 1
     Set-ItemProperty $regExplorerAdvanced LaunchTo 1
 
-    Write-Output ">> Pinning common directory to the Quick Access..."
+    Write-Output ">> Pinning handy directory to the Quick Access..."
     PinToQuickAccess($Env:USERPROFILE)
     PinToQuickAccess($ReposDirectory)
 
@@ -84,7 +89,7 @@ function SetupContextMenuWithBash () {
         New-Item $regKey -Value "Open &Bash here" | Out-Null
         Set-ItemProperty $regKey Icon $ExpectedPath_GitBash
 
-        $command = "`"$ExpectedPath_ConEmu`" -NoSingle -Dir `"%1`" -run {Bash::Git bash}"
+        $command = "`"$ExpectedPath_ConEmu`" -NoSingle -Dir `"%V`" -run {Bash::Git bash}"
         New-Item "$regKey\command" -Value $command | Out-Null
 
         Write-Output ">> >> Windows context menu for Bash created at: '$regKey'."
@@ -107,9 +112,16 @@ function SetupReposFolderIcon {
     $configFile = "desktop.ini"
 
     ReplaceWitBackupAt $ReposDirectory $source $iconFile
+    $iconFile = Join-Path $ReposDirectory $iconFile
+    SetAttributesOf $iconFile "Hidden"
+
     ReplaceWitBackupAt $ReposDirectory $source $configFile
-    HideIt (Join-Path $ReposDirectory $iconFile)
-    HideIt (Join-Path $ReposDirectory $configFile)
+    $configFile = Join-Path $ReposDirectory $configFile
+    SetAttributesOf $configFile "Hidden"
+    SetAttributesOf $configFile "System"
+
+    # Only to force folder's icon load by Explorer:
+    SetAttributesOf $ReposDirectory "ReadOnly"
 
     Write-Output ">> 'Repos' folder's appearance changed."
 }
