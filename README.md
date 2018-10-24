@@ -4,49 +4,64 @@ My personal environment's configuration
 
 ----
 
-## Chocolatey & System software
+## Initial basic setup
 
-1. Install via script from: [Chocolatey.org](https://chocolatey.org/install)
+1. Set preferred [_PowerShell_](https://docs.microsoft.com/en-us/powershell/) execution policy for whole machine, using _PowerShell_ session (`PSSession`) with elevated permissions to the _Administrator Role_:
     ```PowerShell
-    Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+    Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Confirm
     ```
-    * You might also like to turn on feature [_Use Remembered Arguments For Upgrades_](https://chocolatey.org/docs/chocolatey-configuration#general-2) by executing: `$#> choco feature enable --name=useRememberedArgumentsForUpgrades`
-2. Execute prepare script: [`> .\Choco\!prepare.ps1`](Choco/!prepare.ps1)
-   * Will install [defined applications](Choco/packages.txt) according to selected packages level.
-   * Some packages or them dependencies may require reboot after installation.
-   * Optional script's parameter `-PkgLevel (core|work|full)`.
-   * Default value is assumed to be: `-PkgLevel full`.
-3. Scripts have to be executed from PowerShell with elevated permissions to the Administrator Role.
+2. Install [_Chocolatey_](https://chocolatey.org/about): a package manager for Windows, using elevated `PSSession`:
+    ```PowerShell
+    ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) | Invoke-Expression
+    ```
 
-## System configuration
+## Software via Chocolatey
+
+1. Execute prepare script: [`> .\Choco\!prepare.ps1`](Choco/!prepare.ps1)
+   * Optional script's parameter: `-PkgLevel (core|work|full)`
+   * Default value is assumed to be: `-PkgLevel full`
+2. That script requires _Chocolatey_ and have to be executed from `PSSession` elevated to _Admin_.
+3. What does that script do?
+   * Will turn on `choco`'s feature: [_Use Remembered Arguments For Upgrades_](https://chocolatey.org/docs/chocolatey-configuration#general-2).
+   * Will install every [defined applications](Choco/packages.txt) according to selected packages level.
+   * Some packages or their dependencies may require reboot after installation.
+
+## Bash shell & Git configuration
+
+1. Execute prepare script: [`> .\ShellGit\!prepare.ps1`](ShellGit/!prepare.ps1)
+   * Optional script's switch: `-LinkBack`
+   * When set, only hard-links configuration files back into this repository.
+2. That script requires _Git_ with _Bash_, which should been already installed via [_Chocolatey_ step](#software-via-chocolatey).
+3. What does that script do?
+   * Will hard-link configuration files ([`.gitconfig`](ShellGit/.gitconfig), [`.bashrc`](ShellGit/.bashrc)) into _Home_ (`~/`) directory of current user.
+   * Will hard-link [_ConEmu_](https://chocolatey.org/packages/ConEmu)'s configuration file ([`ConEmu.xml`](ShellGit/ConEmu.xml)) into user's _AppData_ directory, when available.
+
+## Windows configuration
 
 1. Execute prepare script: [`> .\System\!prepare.ps1`](System/!prepare.ps1)
-   * Will setup all defined [files' extensions](System/extensions.txt) to be treated as Text-Based files.
-   * Will schedule [_Process Explorer_](https://chocolatey.org/packages/procexp) to start on _Logon_ of any user.
-   * Will setup context menu entry: _Open Bash here_ at Folders - only when [_ConEmu_](https://chocolatey.org/packages/ConEmu) is available.
-   * Will fix Windows Explorer configuration and setup Quick Access standard folders.
-2. Script have to be executed from PowerShell with elevated permissions to the Administrator Role.
-
-## Bash Shell & Git configuration
-
-1. Git should had been installed via [_Chocolatey_](#chocolatey--system-software)
-2. Bash shell is being expected to be installed with Git
-3. Execute prepare script: [`> .\ShellGit\!prepare.ps1`](ShellGit/!prepare.ps1)
-   * Will hard-link configuration files ([`.gitconfig`](ShellGit/.gitconfig), [`.bashrc`](ShellGit/.bashrc)) into _Home_ (`~/`) directory.
-   * Will hard-link [_ConEmu_](https://chocolatey.org/packages/ConEmu)'s configuration file ([`ConEmu.xml`](ShellGit/ConEmu.xml)) into user's _AppData_ directory.
-   * There is an optional script's switch: `-LinkBack`. With it, script will just hard-link configuration files back into this repository - because Git likes to break Hard-Links.
+2. That script have to be executed from `PSSession` elevated to _Admin_ from target user.
+3. What does that script do?
+   * Will setup every [defined files' extensions](System/extensions.txt) to be treated as Text-Based files by _Windows Explorer_.
+   * Will schedule [_Process Explorer_](https://chocolatey.org/packages/procexp) by _Mark Russinovich_ to start on _Logon_ of any user.
+   * Will fix _Explorer's_ configuration and setup [_Quick Access_](https://support.microsoft.com/en-us/help/4027032/windows-pin-remove-and-customize-in-quick-access) with a few handy folders.
+   * Will ~~cleanup context menu for folders with unnecessary entries.~~ (not yet implemented)
+   * Will setup context menu entry: _Open Bash here_ at folders. When [_ConEmu_](https://chocolatey.org/packages/ConEmu) and _Bash_ from _Git_ are available.
+   * Will ~~embellish current user's directory `~/Repos` with appropriate [icon](System/template_Repos/GitDirectory.png) for _Git_.~~ (not working)
 
 ## Visual Studio Code
 
-1. Download and install from [Microsoft](https://code.visualstudio.com/docs/?dv=win)
-2. Execute prepare script: [`> .\VSCode\!prepare.ps1`](VSCode/!prepare.ps1)
-   * Will install selected [extensions](VSCode/extensions.txt) and hard-link configuration files ([`settings.json`](VSCode/settings.json), [`keybindings.json`](VSCode/keybindings.json)) into VS Code.
-   * There is an optional script's switch: `-LinkBack`. With it, script will just hard-link VS Code's configuration files back into this repository - because Git likes to break Hard-Links.
+1. Execute prepare script: [`> .\VSCode\!prepare.ps1`](VSCode/!prepare.ps1)
+   * Optional script's switch: `-LinkBack`.
+   * When set, only hard-links configuration files back into this repository.
+2. That script requires installed _VS Code_, which could be download from [Microsoft](https://code.visualstudio.com/docs/?dv=win).
+3. What does that script do?
+   * Will install every [defined extensions](VSCode/extensions.txt) for _VS Code_.
+   * Will hard-link configuration files ([`settings.json`](VSCode/settings.json), [`keybindings.json`](VSCode/keybindings.json)).
 
 ## Visual Studio 2017
 
-1. Download and install from [Microsoft](https://www.visualstudio.com/pl/vs/community/)
-   * Extensions and configuration: [description](VSCommunity.md).
+1. Extensions and configuration presented in [file: `VSCommunity.md`](VSCommunity.md).
+2. Download and install it from [Microsoft (_Community_ version)](https://www.visualstudio.com/pl/vs/community/).
 
 ## Additional software
 
@@ -62,8 +77,10 @@ My personal environment's configuration
 
 _Assumptions and remarks:_
 
-* Headers presented above are set in proposed execution order of steps.
-* Every prepare script (`!prepare.ps1`) should be run from this Repository's root directory via PowerShell.
-* Steps (excluding [_Chocolatey_](#chocolatey--system-software)) expects that this Repository had been cloned under path: `~/Repos/`.
+* Headers presented above are set in proposed order of execution of configuration steps.
+* Most of steps expects that, this Repository had been cloned under path: `~/Repos/EnvConfigs`.
+* Every _prepare script_ (`!prepare.ps1`) should be run from this Repository's root directory via _PowerShell_.
+* Almost all _prepare scripts_ expect to be run within _PowerShell_ session with elevated permissions to the _Administrator Role_.
+* Some scripts provides switch: `-LinkBack`, because _Git_ likes to break `Hard-Links` on checkouts.
+* Expecting [_PowerShell_](https://docs.microsoft.com/en-us/powershell/scripting/setup/installing-windows-powershell?view=powershell-6) to be in version bigger then 3, check: `$PSVersionTable.PSVersion` variable.
 * To obtain elevated PowerShell console, just execute: [`$#> PowerShell.exe -File ".\!elevate.ps1"`](!elevate.ps1)
-* Expecting [PowerShell](https://docs.microsoft.com/en-us/powershell/scripting/setup/installing-windows-powershell?view=powershell-6) to be in version bigger then 3, see: `$PSVersionTable.PSVersion`
