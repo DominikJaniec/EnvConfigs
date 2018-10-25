@@ -19,11 +19,12 @@
 .gitconfig
 .gitignore
 
-# Programming languages files:
+# Programming language files:
 .fs
 .fsx
 .fsproj
 .hs
+.lhs
 .elm
 .cabal
 .cs
@@ -35,34 +36,53 @@
 .htm
 .html
 .sql
-.sh
 .ps1
 .cmd
+.sh
 .h
 .c
+.cu
+.cuh
 .cpp
 .java
+.py
 .rb
 .sbt
 .scala
+.go
+.ex
+.ml
+.rs
 
-# Configurations files:
-.xml
+# Configuration files:
 .json
+.yml
+.yaml
+.ini
 .cfg
 .conf
 .config
-.yaml
-.yml
-.ini
+.xml
+.xsl
+.xsd
 .properties
+
+# Certificate files:
+.pem
+.pub
+.crt
+.cer
 
 # Other text files:
 .md
 .txt
+.tex
+.srt
 .log
 .nfo
-.patch
+.csv
+.tsv
 .diff
+.patch
 .usr
 .bak

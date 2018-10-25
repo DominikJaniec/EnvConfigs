@@ -1,18 +1,29 @@
+param(
+    [switch]$OnlyTxtExt,
+    [switch]$OnlyProcExp,
+    [switch]$OnlyExplorer,
+    [switch]$OnlyFixCtxMenu
+)
+
 . ".\common.ps1"
 
 $ReposDirectory = Join-Path $Env:USERPROFILE "Repos"
 $ProcessExplorer = Join-Path $Env:ChocolateyInstall "lib\procexp\tools\procexp.exe"
 
-function TextFilesExtensionsFrom($sourceFile) {
-    return LoadLinesFrom $PSScriptRoot $sourceFile `
-        | ForEach-Object { "$_".Trim() }
+function ShouldExecuteEverything {
+    $any = $OnlyTxtExt.IsPresent `
+        -or $OnlyProcExp.IsPresent `
+        -or $OnlyExplorer.IsPresent `
+        -or $OnlyFixCtxMenu.IsPresent
+
+    return -not $any
 }
 
 function SetTextFilesExtensions () {
-    $extensions = TextFilesExtensionsFrom "extensions.txt"
-    $total = @($extensions).Count
-    Write-Output "`n>> Requested $total extensions of files which will be treated as Text-Based files."
+    Write-Output "`n>> Setting up Text-Based files extensions."
+    $extensions = LoadLinesFrom $PSScriptRoot "extensions.txt"
 
+    $total = @($extensions).Count
     $counter = 1
     foreach ($ext in $extensions) {
         $setupExpression = "assoc $ext=txtfile"
@@ -70,22 +81,38 @@ function SetupWindowsExplorer () {
     Write-Output ">> Windows Explorer has been configured."
 }
 
+function RegisterRegistryDrive () {
+    $driveProvider = Get-PSDrive -PSProvider Registry `
+        | Where-Object -Property Name -eq "HKCR"
+
+    if (-not($driveProvider)) {
+        New-PSDrive -Scope Script -PSProvider Registry `
+            -Root "HKEY_CLASSES_ROOT" -Name "HKCR" `
+            | Out-Null
+    }
+}
+
+function GenerateContextMenuRegistryKeys ($registryKeys) {
+    $direct = $registryKeys `
+        | ForEach-Object { "HKCR:\Directory\shell\$_" }
+
+    $background = $registryKeys `
+        | ForEach-Object { "HKCR:\Directory\Background\shell\$_" }
+
+    return @($direct) + $background
+}
+
 function SetupContextMenuWithBash () {
-    Write-Output "`n>> Configuring Windows context menu with Bash via ConEmu."
-    if (CouldNotFindForConfig "ConEmu" $ExpectedPath_ConEmu -or `
-            CouldNotFindForConfig "GitBash" $ExpectedPath_GitBash) {
+    Write-Output "`n>> Configuring Explorer's context menu with Bash shell via ConEmu."
+    if (CouldNotFindForConfig "ConEmu" $ExpectedPath_ConEmu `
+            -or CouldNotFindForConfig "GitBash" $ExpectedPath_GitBash) {
         return
     }
 
-    New-PSDrive -PSProvider registry -Root HKEY_CLASSES_ROOT -Name HKCR | Out-Null
-    $regDirectories = @("HKCR:\Directory\shell", "HKCR:\Directory\Background\shell")
-
-    foreach ($regKeyBase in $regDirectories) {
-        $regKey = "$regKeyBase\ViaConEmu_GitBash"
-        if (Test-Path $regKey) {
-            continue
-        }
-
+    GenerateContextMenuRegistryKeys @("ViaConEmu_GitBash") `
+        | Where-Object { -not(Test-Path $_) } `
+        | ForEach-Object {
+        $regKey = $_
         New-Item $regKey -Value "Open &Bash here" | Out-Null
         Set-ItemProperty $regKey Icon $ExpectedPath_GitBash
 
@@ -98,11 +125,31 @@ function SetupContextMenuWithBash () {
     & $ExpectedPath_ConEmu -UpdateJumpList -run exit
     # & $ExpectedPath_ConEmu -UpdateJumpList -Exit
     # TODO : https://github.com/Maximus5/ConEmu/issues/1478
-    Write-Output ">> Windows Bash via ConEmu integration done."
+    Write-Output ">> Windows Explorer and Bash shell via ConEmu integration done."
 }
 
-function SetupReposFolderIcon {
-    Write-Output "`n>> Setting up 'Repos' directory's icon..."
+function CleanupContextMenuItems () {
+    Write-Output "`n>> Cleaning up Explorer's context menu of Folders from unwanted items."
+
+    $cmdNames = LoadLinesFrom $PSScriptRoot "unwanted_cmds.txt"
+    GenerateContextMenuRegistryKeys $cmdNames `
+        | ForEach-Object {
+        $regKey = $_
+        $status = "already gone"
+
+        if (Test-Path $regKey) {
+            $status = "removed"
+            Remove-Item $regKey -Recurse
+        }
+
+        Write-Output ">> >> Folder's context menu at: '$regKey' - $status."
+    }
+
+    Write-Output ">> Windows Explorer's context menu for folders cleaned up."
+}
+
+function EmbellishReposFolder () {
+    Write-Output "`n>> Embellishing '~/Repos' by setting up directory's icon..."
     if (CouldNotFindForConfig "Repos directory" $ReposDirectory) {
         return
     }
@@ -128,10 +175,25 @@ function SetupReposFolderIcon {
 
 #######################################################################################
 
-SetTextFilesExtensions
-ScheduleProcessExplorer
-SetupWindowsExplorer
-SetupContextMenuWithBash
-SetupReposFolderIcon
+RegisterRegistryDrive
+$all = ShouldExecuteEverything
+
+if ($all -or $OnlyTxtExt.IsPresent) {
+    SetTextFilesExtensions
+}
+
+if ($all -or $OnlyProcExp.IsPresent) {
+    ScheduleProcessExplorer
+}
+
+if ($all -or $OnlyExplorer.IsPresent) {
+    EmbellishReposFolder
+    SetupWindowsExplorer
+}
+
+if ($all -or $OnlyFixCtxMenu.IsPresent) {
+    CleanupContextMenuItems
+    SetupContextMenuWithBash
+}
 
 Write-Output "`n>> System preparation: Done."

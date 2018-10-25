@@ -1,0 +1,14 @@
+####################################################################
+# This file contains List of unwanted commands' Names available
+# under context menu of any directory in Windows Explorer.
+#
+# Empty lines or beginning with '#' are ignored.
+#
+
+
+AddToPlaylistVLC
+AnyCode
+git_gui
+git_shell
+PDF24
+PlayWithVLC
