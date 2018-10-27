@@ -40,10 +40,10 @@
     mt = mergetool -t vscode
     lo = !git looog -9
     looog = log --oneline --graph
-    visualise-git = !start gitk --all
+    visualise = !start gitk --all
     branches = branch --format=%(refname:short) --list
     details = show --format=fuller --show-signature --summary --stat --stat-width=140 --stat-graph-width=20
-    fire-fire-fire = !sh ~/Repos/git-fire/git-fire
+    fire-fire = !sh ~/Repos/git-fire/git-fire
     ignore-for = !sh -c 'curl --output .gitignore --fail \"https://raw.githubusercontent.com/github/gitignore/master/$0.gitignore\"'
     ignore-for-visualstudio = !git ignore-for VisualStudio
     recommit = commit --amend --reset-author
