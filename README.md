@@ -12,7 +12,8 @@ My personal environment's configuration
     ```
 2. Install [_Chocolatey_](https://chocolatey.org/about): a package manager for Windows, using elevated `PSSession`:
     ```PowerShell
-    ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) | Invoke-Expression
+    ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) `
+        | Invoke-Expression
     ```
 
 ## Software via Chocolatey
@@ -39,14 +40,14 @@ My personal environment's configuration
 ## Windows configuration
 
 1. Execute prepare script: [`> .\System\!prepare.ps1`](System/!prepare.ps1)
+   * Script has a few switches. When any of then is present, only related changes will be executed. Script by default executes all of them.
+   * Available switches: `-OnlyTxtExt`, `-OnlyProcExp`, `-OnlyExplorer`, `-OnlyFixCtxMenu`.
 2. That script have to be executed from `PSSession` elevated to _Admin_ from target user.
 3. What does that script do?
-   * Will setup every [defined files' extensions](System/extensions.txt) to be treated as Text-Based files by _Windows Explorer_.
-   * Will schedule [_Process Explorer_](https://chocolatey.org/packages/procexp) by _Mark Russinovich_ to start on _Logon_ of any user.
-   * Will fix _Explorer's_ configuration and setup [_Quick Access_](https://support.microsoft.com/en-us/help/4027032/windows-pin-remove-and-customize-in-quick-access) with a few handy folders.
-   * Will ~~cleanup context menu for folders with unnecessary entries.~~ (not yet implemented)
-   * Will setup context menu entry: _Open Bash here_ at folders. When [_ConEmu_](https://chocolatey.org/packages/ConEmu) and _Bash_ from _Git_ are available.
-   * Will embellish current user's directory `~/Repos` with appropriate [icon](System/template_Repos/GitDirectory.png) for _Git_.
+   * Will setup every [defined files' extensions](System/extensions.txt) to be treated as Text-Based files by _Windows Explorer_. Switch: `-OnlyTxtExt`
+   * Will schedule [_Process Explorer_](https://chocolatey.org/packages/procexp) by _Mark Russinovich_ to start on _Logon_ of any user. Switch: `-OnlyProcExp`
+   * Will fix _Explorer's_ configuration and setup [_Quick Access_](https://support.microsoft.com/en-us/help/4027032/windows-pin-remove-and-customize-in-quick-access) with a few handy folders. It will also embellish current user's directory `~/Repos` with appropriate [icon](System/template_Repos/GitDirectory.png) for _Git_. Switch: `-OnlyExplorer`
+   * Will cleanup context menu for folders with unnecessary entries. It will also setup new entry: _Open Bash here_ at folders, only when [_ConEmu_](https://chocolatey.org/packages/ConEmu) and _Bash_ from _Git_ are available. Switch: `-OnlyFixCtxMenu`
 
 ## Visual Studio Code
 
