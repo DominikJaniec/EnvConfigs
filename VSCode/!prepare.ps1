@@ -1,7 +1,12 @@
-param([switch]$LinkBack)
+param(
+    [switch]$LinkBack,
+    [string]$Extensions = "all"
+)
 
 . ".\common.ps1"
 
+$ExtensionsSeparator = ","
+$ExtensionsGroups = @("all", "must", "tools", "coding", "haskell", "extra")
 $VSCodeProfile = Join-Path $env:USERPROFILE "AppData\Roaming\Code\User"
 
 function EnsureVSCodeAvailable {
@@ -16,17 +21,53 @@ function EnsureVSCodeAvailable {
     }
 }
 
-function InstallExtensionsFrom($sourceFile) {
-    $installArgs = LoadLinesFrom $PSScriptRoot $sourceFile `
-        | ForEach-Object { "--install-extension $_" }
+function Resolve-ExtensionsGroup ($group) {
+    $group = $group.Trim().ToLower()
+    if ($ExtensionsGroups -contains $group) {
+        return $group
+    }
 
-    $command = "code $($installArgs -join " ")"
+    $valid = $ExtensionsGroups -join "|"
+    throw "Unknown extensions group: '$group', use: ($valid)" `
+        + " as well as multiple values concatenated with: '$ExtensionsSeparator'."
+}
+
+function Get-RequestedExtensionsGroups ($extensions) {
+    $requested = $extensions.Split($ExtensionsSeparator) `
+        | ForEach-Object { Resolve-ExtensionsGroup $_ }
+
+    if ($requested -contains "all") {
+        return $ExtensionsGroups
+    }
+
+    return $requested
+}
+
+function Test-ExtensionRequested ($requestedGroups, $extensionData) {
+    $extensionGroup = Resolve-ExtensionsGroup $extensionData.Metadata
+    return $requestedGroups -contains $extensionGroup
+}
+
+function InstallExtensionsFrom ($sourceFile, $extensions) {
+    $requested = Get-RequestedExtensionsGroups $extensions
+    $installArgs = LoadMetaLinesFrom $PSScriptRoot $sourceFile `
+        | Where-Object { Test-ExtensionRequested $requested $_ } `
+        | ForEach-Object {
+        $group = $_.Metadata
+        $group = $_.Metadata
+        $extension = $_.Value
+        Write-Host ">> >> Will install '$group': '$extension'."
+        return "--install-extension '$extension'"
+    }
+
+    $installArgs = $installArgs -join " "
+    $command = "code $installArgs"
     Invoke-Expression $command
 }
 
-function PrepareVSCode {
+function PrepareVSCode ($installExtensions) {
     Write-Output "`n>> Installing VS Code extensions:"
-    InstallExtensionsFrom "extensions.txt"
+    InstallExtensionsFrom "extensions.txt" $installExtensions
 
     Write-Output "`n>> Linking configuration files to the VS Code:"
     MakeHardLinkTo $VSCodeProfile $PSScriptRoot "keybindings.json"
@@ -47,7 +88,7 @@ if ($LinkBack.IsPresent) {
     HardLinkConfigBack
 }
 else {
-    PrepareVSCode
+    PrepareVSCode $Extensions
 }
 
 Write-Output "`n>> VS Code preparation: Done."

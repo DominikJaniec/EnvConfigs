@@ -26,6 +26,18 @@ function LoadLinesFrom ($sourceDir, $sourceFile) {
         | Where-Object { -not($_.StartsWith("#")) }
 }
 
+function LoadMetaLinesFrom ($sourceDir, $sourceFile) {
+    return LoadLinesFrom $sourceDir $sourceFile `
+        | ForEach-Object {
+        $parts = $_.Split("|")
+        $props = [ordered]@{
+            Metadata = $parts[0];
+            Value    = $parts[1];
+        }
+        return New-Object PSObject -Property $props
+    }
+}
+
 function AreSameFiles ($leftFilePath, $rightFilePath) {
     $left = Get-Content $leftFilePath -Force
     $right = Get-Content $rightFilePath -Force

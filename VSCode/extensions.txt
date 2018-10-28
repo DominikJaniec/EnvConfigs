@@ -1,20 +1,41 @@
-####################################################################
+###################################################################
 # This file contains List of Extensions' names for VS Code.
+#
+# Each lines defines group (must|tools|coding|haskell|extra),
+#     and then after pipe (character '|') is defined identifier
+#     which will be provided as parameter for install command:
+#     `code --install-extension <extension-identifier>`.
 #
 # Empty lines or beginning with '#' are ignored.
 #
 
-donjayamanne.githistory
-eamodio.gitlens
-hoovercj.haskell-linter
-Ionide.Ionide-fsharp
-ms-vscode.csharp
-ms-vscode.PowerShell
-ms-vscode.vs-keybindings
-sbrink.elm
-streetsidesoftware.code-spell-checker
-Vans.haskero
-vscodevim.vim
-yzhang.markdown-all-in-one
-DavidAnson.vscode-markdownlint
-DotJoshJohnson.xml
+must|vscodevim.vim
+must|eamodio.gitlens
+must|ryu1kn.partial-diff
+must|ms-vscode.vs-keybindings
+
+tools|streetsidesoftware.code-spell-checker
+tools|streetsidesoftware.code-spell-checker-polish
+tools|yzhang.markdown-all-in-one
+tools|DavidAnson.vscode-markdownlint
+tools|aaron-bond.better-comments
+tools|mechatroner.rainbow-csv
+tools|humao.rest-client
+
+coding|Ionide.Ionide-fsharp
+coding|sbrink.elm
+coding|ms-vscode.csharp
+coding|ms-vscode.PowerShell
+coding|ecmel.vscode-html-css
+coding|michelemelluso.code-beautifier
+coding|redhat.vscode-yaml
+coding|DotJoshJohnson.xml
+
+haskell|Vans.haskero
+haskell|jcanero.hoogle-vscode
+haskell|hoovercj.haskell-linter
+haskell|justusadam.language-haskell
+
+extra|ms-vsliveshare.vsliveshare
+extra|PeterJausovec.vscode-docker
+extra|ms-kubernetes-tools.vscode-kubernetes-tools
