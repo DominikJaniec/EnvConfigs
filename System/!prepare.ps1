@@ -5,10 +5,9 @@ param(
     [switch]$OnlyFixCtxMenu
 )
 
-. ".\common.ps1"
-
 $ReposDirectory = Join-Path $Env:USERPROFILE "Repos"
 $ProcessExplorer = Join-Path $Env:ChocolateyInstall "lib\procexp\tools\procexp.exe"
+. ".\common.ps1"
 
 function ShouldExecuteEverything {
     $any = $OnlyTxtExt.IsPresent `

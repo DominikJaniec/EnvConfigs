@@ -1,8 +1,10 @@
 ####################################################################
 # This file contains List of "install expressions" for Chocolatey.
-# Each lines defines packages' level (core|work|full) and then
-#     after pipe (character '|') is defined install expression
-#     which will be provided as parameter for `choco install`.
+#
+# Each lines defines packages' level (core|work|full)
+#     and then after pipe (character '|') is defined expression
+#     which will be provided as parameter for install command:
+#     `choco install <install-expression> --confirm`
 #
 # Empty lines or beginning with '#' are ignored.
 #

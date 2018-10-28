@@ -1,5 +1,6 @@
 param([string]$PkgLevel = "full")
 
+$PackagesLevels = @("core", "work", "full")
 . ".\common.ps1"
 
 function EnsureChocoAvailable {
@@ -23,32 +24,33 @@ function EnableRememberedArguments {
 }
 
 function PackagesLevelToIndex($pkgLevel) {
-    $empty = ""
-    switch ("$pkgLevel".ToLower().Trim()) {
-        "core" { return 0 }
-        "work" { return 1 }
-        "full" { return 2 }
-        $empty { return 2 }
-        default {
-            throw "Unknown packages level: '$pkgLevel', use: (core|work|full)."
+    $lvl = "$pkgLevel".Trim().ToLower()
+    if ($lvl -eq "") {
+        return $PackagesLevels.Length
+    }
+
+    $index = $PackagesLevels.IndexOf($lvl)
+    if ($index -ge 0) {
+        return $index
+    }
+
+    $valid = $PackagesLevels -join "|"
+    throw "Unknown packages level: '$pkgLevel', use: ($valid)" `
+        + " where each value includes every previous one in order."
+}
+
+function PackagesInstallExpressionsFrom ($sourceFile) {
+    return LoadMetaLinesFrom $PSScriptRoot $sourceFile `
+        |  ForEach-Object {
+        $lvl = $_.Metadata
+        $pkg = $_.Value
+
+        return @{
+            Level   = $lvl;
+            Index   = PackagesLevelToIndex $lvl;
+            Install = "choco install $pkg --confirm"
         }
     }
-}
-
-function MakeChocoExpression ($packageInstallLine) {
-    $parts = "$packageInstallLine".Split("|");
-    $lvl = $parts[0].Trim()
-    $pkg = $parts[1].Trim()
-    return @{
-        Level   = PackagesLevelToIndex $lvl;
-        Install = "choco install $pkg --confirm"
-    }
-}
-
-function PackagesInstallExpressionsFrom ($sourceFile, $levelIdx) {
-    return LoadLinesFrom $PSScriptRoot $sourceFile `
-        | ForEach-Object { MakeChocoExpression $_ } `
-        | Where-Object { $_.Level -le $levelIdx }
 }
 
 #######################################################################################
@@ -57,8 +59,10 @@ EnsureChocoAvailable
 EnableRememberedArguments
 
 $levelIdx = PackagesLevelToIndex $PkgLevel
-$expressions = PackagesInstallExpressionsFrom "packages.txt" $levelIdx
-$total = @($expressions).Count
+$expressions = PackagesInstallExpressionsFrom "packages.txt" `
+    | Where-Object { $_.Index -le $levelIdx }
+
+$total = @($expressions).Length
 Write-Output "`n>> Requested $total installations of software with packages level up to $levelIdx (-PkgLevel $PkgLevel)."
 
 $counter = 1

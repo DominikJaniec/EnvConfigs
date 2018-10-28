@@ -3,11 +3,10 @@ param(
     [string]$Extensions = "all"
 )
 
-. ".\common.ps1"
-
 $ExtensionsSeparator = ","
 $ExtensionsGroups = @("all", "must", "tools", "coding", "haskell", "extra")
 $VSCodeProfile = Join-Path $env:USERPROFILE "AppData\Roaming\Code\User"
+. ".\common.ps1"
 
 function EnsureVSCodeAvailable {
     try {
@@ -22,9 +21,9 @@ function EnsureVSCodeAvailable {
 }
 
 function Resolve-ExtensionsGroup ($group) {
-    $group = $group.Trim().ToLower()
-    if ($ExtensionsGroups -contains $group) {
-        return $group
+    $gr = "$group".Trim().ToLower()
+    if ($ExtensionsGroups -contains $gr) {
+        return $gr
     }
 
     $valid = $ExtensionsGroups -join "|"
@@ -53,7 +52,6 @@ function InstallExtensionsFrom ($sourceFile, $extensions) {
     $installArgs = LoadMetaLinesFrom $PSScriptRoot $sourceFile `
         | Where-Object { Test-ExtensionRequested $requested $_ } `
         | ForEach-Object {
-        $group = $_.Metadata
         $group = $_.Metadata
         $extension = $_.Value
         Write-Host ">> >> Will install '$group': '$extension'."
