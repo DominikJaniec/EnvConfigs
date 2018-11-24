@@ -32,13 +32,22 @@
 
 [alias]
     st = status
+    lo = !git looog -9
+    co = checkout
     df = diff
     ad = add -A
     cm = commit -m
-    co = checkout
+    rc = !git recommit-do-it
+    mg = merge
+    pl = pull
+    ps = push
+    rs = reset
+    ft = fetch
+    br = branch
+    cp = cherry-pick
     dt = difftool -t vscode
     mt = mergetool -t vscode
-    lo = !git looog -9
+
     looog = log --oneline --graph
     visualise = !start gitk --all
     branches = branch --format=%(refname:short) --list
