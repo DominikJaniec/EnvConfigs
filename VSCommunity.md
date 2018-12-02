@@ -18,12 +18,15 @@ Configuration entries which are different then defaults:
     * Remove whitespace on save: `True`
 * Projects and Solutions
   * General: `[ ]` Track Active Item in Solution Explorer
+  * Locations: Projects locations
+    * _Change to valid path_
 * Text Editor
   * General: `[ ]` Enable mouse click to perform Go to Definition
   * All Languages
     * General: `[✓]` Line numbers
 * VsVim (_extension_)
   * Keyboard: `Ctrl+[` Handled by `VsVim`
+    * _Ensure_: `[✓]` Include All Scopes
 
 ## Extensions
 
@@ -32,15 +35,19 @@ Proposed extensions which should be installed:
 * [**Add New File**](https://marketplace.visualstudio.com/items?itemName=MadsKristensen.AddNewFile)
   * The fastest and easiest way to add new files to any project - including files that start with a dot.
 * [**Generate GUID for Visual Studio 2012-2017**](https://marketplace.visualstudio.com/items?itemName=kylebahrke.GenerateGUIDforVisualStudio2015)
-  * Generate a variety of GUID values by using a simple chord (default Ctrl+Shift+K, Ctrl+Shift+G) with the ability to change formats using a drop down in the Tools menu.
+  * Generate a variety of _GUID_ values by using a simple chord (default `Ctrl+Shift + K`, `Ctrl+Shift + G`) with the ability to change formats using a drop down in the Tools menu.
 * [**Mouse Fast Scroll**](https://marketplace.visualstudio.com/items?itemName=SamHarwell.MouseFastScroll)
-  * Use Ctrl+Mouse Wheel for fast and easy Page Up/Down scrolling.
+  * Use `Ctrl + Mouse-Wheel-Roll` for fast and easy Page Up/Down scrolling.
 * [**Relative Number**](https://marketplace.visualstudio.com/items?itemName=BrianSchmitt.RelativeNumber)
-  * Displays the line number relative to the line with the cursor on it. It allows you to make quick vertical movements.
+  * Displays the line number relative to the line with the cursor on it. It allows you to make quick vertical references or movements.
+* [**Roslynator**](https://marketplace.visualstudio.com/items?itemName=josefpihrt.Roslynator2017)
+  * A collection of 500+ analyzers, refactorings and fixes for _C#_, powered by _Roslyn_.
 * [**Trailing Whitespace Visualizer**](https://marketplace.visualstudio.com/items?itemName=MadsKristensen.TrailingWhitespaceVisualizer)
-  * Keeps your code files clean by making it easier than ever to identify and remove any trailing whitespace.
+  * Keeps your code files clean by making it easier than ever to identify and remove any _trailing whitespace_.
+* [**Visual Studio Spell Checker**](https://marketplace.visualstudio.com/items?itemName=EWoodruff.VisualStudioSpellCheckerVS2017andLater)
+  * Checks the spelling of comments, strings, and plain text as you type or interactively with a tool window.
 * [**VsVim**](https://marketplace.visualstudio.com/items?itemName=JaredParMSFT.VsVim)
-  * VIM emulation layer for Visual Studio.
+  * _Vim_ emulation layer for _Visual Studio_. Warning, addictive!
 
 Less important extensions:
 
