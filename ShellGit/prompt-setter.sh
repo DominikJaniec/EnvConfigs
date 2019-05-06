@@ -66,16 +66,16 @@ function __PS_print_context () {
         local user_name=${2}
         local host_name=${3}
 
-        context+="\x01${__PS_clear}\x02\n\x01${__PS_mark}\x02# \x01${__PS_time}\x02${date_time}"
+        context+="\x01${__PS_clear}\x02\n\x01${__PS_mark}\x02➤➤ \x01${__PS_time}\x02${date_time}"
         context+=" \x01${__PS_user}\x02${user_name} \x01${__PS_host}\x02@${host_name}"
         context+="${__PS_var__full_context}"
     fi
 
     # Set 'Last ExitCode' standard context:
     if [ ${__PS_var__last_exticode} -eq 0 ]; then
-        context+="\x01${__PS_exit_ok}\x02✔"
+        context+="\x01${__PS_exit_ok}\x02 ✔"
     else
-        context+="\x01${__PS_exit_err}\x02✘ e:${__PS_var__last_exticode}"
+        context+="\x01${__PS_exit_err}\x02 ✘! e:${__PS_var__last_exticode}"
     fi
 
     echo -e "${context}"

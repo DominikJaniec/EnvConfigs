@@ -38,11 +38,11 @@
     ad = add -A
     cm = commit -m
     rc = !git recommit-do-it
-    mg = merge
+    rs = reset
     pl = pull
     ps = push
-    rs = reset
     ft = fetch
+    mg = merge
     br = branch
     cp = cherry-pick
     dt = difftool -t vscode
