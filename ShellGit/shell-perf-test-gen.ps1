@@ -1,8 +1,8 @@
 # This file will generate "test file" to check performance of Bash Shell.
 #
-# Created file will contains multiple empty lines, to gather more preciuse
-# information about: how long it take to render `PS1` Bash's prompt varaible.
-# Reslut will be stored as row in a CSV file.
+# Created file will contains multiple empty lines, to gather more precise
+# information about: how long it take to render `PS1` Bash's prompt variable.
+# Result will be stored as row in a CSV file.
 
 $testContentFile = "$PSScriptRoot\shell-perf-test.txt"
 
