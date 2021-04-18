@@ -28,6 +28,18 @@ function pair ($fst, $snd) {
     "Tuple[object,object]"($fst, $snd)
 }
 
+
+function dump ($obj, $name = "Given object") {
+  if ($null -eq $obj) {
+    Write-Host "===// Dump '$name' as just the NULL ===\\"
+  }
+  else {
+    Write-Host "===// Dump '$name' of type: $($obj.GetType())"
+    Write-Host ($obj | Format-Table | Out-String) -NoNewline
+    Write-Host "===\\"
+  }
+}
+
 function l ($path, [switch]$a) {
   function format ($item) {
     $name = "$($item.Name)"

@@ -5,9 +5,9 @@ param(
     [switch]$OnlyFixCtxMenu
 )
 
-$ReposDirectory = Join-Path $Env:USERPROFILE "Repos"
-$ProcessExplorer = Join-Path $Env:ChocolateyInstall "lib\procexp\tools\procexp.exe"
 . ".\common.ps1"
+
+$ProcessExplorer = Join-Path $Env:ChocolateyInstall "lib\procexp\tools\procexp.exe"
 
 function ShouldExecuteEverything {
     $any = $OnlyTxtExt.IsPresent `
@@ -53,7 +53,7 @@ function ScheduleProcessExplorer () {
 }
 
 function PinToQuickAccess ($directoryPath) {
-    if (Test-Path $directoryPath) {
+    if (-not (Test-Path $directoryPath)) {
         return
     }
 
@@ -75,28 +75,28 @@ function SetupWindowsExplorer () {
 
     Write-Output ">> Pinning handy directory to the Quick Access..."
     PinToQuickAccess($Env:USERPROFILE)
-    PinToQuickAccess($ReposDirectory)
+    PinToQuickAccess($ProfilePath_Repos)
 
     Write-Output ">> Windows Explorer has been configured."
 }
 
 function RegisterRegistryDrive () {
     $driveProvider = Get-PSDrive -PSProvider Registry `
-        | Where-Object -Property Name -eq "HKCR"
+    | Where-Object -Property Name -eq "HKCR"
 
-    if (-not($driveProvider)) {
+    if (-not $driveProvider) {
         New-PSDrive -Scope Script -PSProvider Registry `
             -Root "HKEY_CLASSES_ROOT" -Name "HKCR" `
-            | Out-Null
+        | Out-Null
     }
 }
 
 function GenerateContextMenuRegistryKeys ($registryKeys) {
     $direct = $registryKeys `
-        | ForEach-Object { "HKCR:\Directory\shell\$_" }
+    | ForEach-Object { "HKCR:\Directory\shell\$_" }
 
     $background = $registryKeys `
-        | ForEach-Object { "HKCR:\Directory\Background\shell\$_" }
+    | ForEach-Object { "HKCR:\Directory\Background\shell\$_" }
 
     return @($direct) + $background
 }
@@ -109,8 +109,8 @@ function SetupContextMenuWithBash () {
     }
 
     GenerateContextMenuRegistryKeys @("ViaConEmu_GitBash") `
-        | Where-Object { -not(Test-Path $_) } `
-        | ForEach-Object {
+    | Where-Object { -not (Test-Path $_) } `
+    | ForEach-Object {
         $regKey = $_
         New-Item $regKey -Value "Open &Bash here" | Out-Null
         Set-ItemProperty $regKey Icon $ExpectedPath_GitBash
@@ -132,7 +132,7 @@ function CleanupContextMenuItems () {
 
     $cmdNames = LoadLinesFrom $PSScriptRoot "unwanted_cmds.txt"
     GenerateContextMenuRegistryKeys $cmdNames `
-        | ForEach-Object {
+    | ForEach-Object {
         $regKey = $_
         $status = "already gone"
 
@@ -149,7 +149,7 @@ function CleanupContextMenuItems () {
 
 function EmbellishReposFolder () {
     Write-Output "`n>> Embellishing '~/Repos' by setting up directory's icon..."
-    if (CouldNotFindForConfig "Repos directory" $ReposDirectory) {
+    if (CouldNotFindForConfig "Repos directory" $ProfilePath_Repos) {
         return
     }
 
@@ -157,17 +157,17 @@ function EmbellishReposFolder () {
     $iconFile = "GitDirectory.ico"
     $configFile = "desktop.ini"
 
-    ReplaceWitBackupAt $ReposDirectory $source $iconFile
-    $iconFile = Join-Path $ReposDirectory $iconFile
+    ReplaceWitBackupAt $ProfilePath_Repos $source $iconFile
+    $iconFile = Join-Path $ProfilePath_Repos $iconFile
     SetAttributesOf $iconFile "Hidden"
 
-    ReplaceWitBackupAt $ReposDirectory $source $configFile
-    $configFile = Join-Path $ReposDirectory $configFile
+    ReplaceWitBackupAt $ProfilePath_Repos $source $configFile
+    $configFile = Join-Path $ProfilePath_Repos $configFile
     SetAttributesOf $configFile "Hidden"
     SetAttributesOf $configFile "System"
 
     # Only to force folder's icon load by Explorer:
-    SetAttributesOf $ReposDirectory "ReadOnly"
+    SetAttributesOf $ProfilePath_Repos "ReadOnly"
 
     Write-Output ">> 'Repos' folder's appearance changed."
 }

@@ -1,8 +1,14 @@
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+$PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
+
 $ExpectedPath_GitBash = Join-Path $Env:PROGRAMFILES "Git\git-bash.exe"
 $ExpectedPath_ConEmu = Join-Path $Env:PROGRAMFILES "ConEmu\ConEmu64.exe"
 
+$ProfilePath_Repos = Join-Path $Env:USERPROFILE "Repos"
+
 function CouldNotFindForConfig ($name, $fullPath) {
-    $notFound = -not(Test-Path $fullPath)
+    $notFound = -not (Test-Path $fullPath)
     if ($notFound) {
         Write-Output ">> Could not find '$name' at: '$fullPath', configuration skipped."
     }
@@ -10,9 +16,9 @@ function CouldNotFindForConfig ($name, $fullPath) {
     return $notFound
 }
 
-function EnsurePathExists ($filePath) {
-    if (-not(Test-Path $filePath)) {
-        throw "Could not find file under path: $filePath"
+function EnsurePathExists ($path) {
+    if (-not (Test-Path $path)) {
+        throw "Could not find anything under path: $path"
     }
 }
 
@@ -21,14 +27,14 @@ function LoadLinesFrom ($sourceDir, $sourceFile) {
     EnsurePathExists $sourceFilePath
 
     return Get-Content $sourceFilePath -Force `
-        | ForEach-Object { $_.trim() } `
-        | Where-Object { $_ -ne "" } `
-        | Where-Object { -not($_.StartsWith("#")) }
+    | ForEach-Object { $_.trim() } `
+    | Where-Object { $_ -ne "" } `
+    | Where-Object { -not $_.StartsWith("#") }
 }
 
 function LoadMetaLinesFrom ($sourceDir, $sourceFile) {
     return LoadLinesFrom $sourceDir $sourceFile `
-        | ForEach-Object {
+    | ForEach-Object {
         $parts = $_.Split("|")
         $props = [ordered]@{
             Metadata = $parts[0];
@@ -49,12 +55,12 @@ function AreSameFiles ($leftFilePath, $rightFilePath) {
     }
 }
 
-function RenameFileAsTimestamptedBackup ($filePath) {
+function RenameAsTimestampedBackup ($filePath) {
     $timestamp = Get-Date -Format yyyyMMdd-HHmmss
     $newPath = "$filePath.$timestamp.bak"
 
     Rename-Item -Path $filePath -NewName $newPath -Force
-    Write-Output "Existing file had been renamed as backup: '$newPath'."
+    Write-Output "Existing path had been renamed as backup: '$newPath'."
 }
 
 function MakeHardLinkTo ($targetDir, $sourceDir, $fileName, $backup = $true) {
@@ -63,7 +69,7 @@ function MakeHardLinkTo ($targetDir, $sourceDir, $fileName, $backup = $true) {
     EnsurePathExists $sourcePath
 
     if (Test-Path $linkedPath) {
-        if (-not($backup)) {
+        if (-not $backup) {
             Remove-Item -Path $linkedPath -Force
             Write-Output "Existing file ('$fileName') had been deleted, linked file will replace it."
         }
@@ -72,7 +78,7 @@ function MakeHardLinkTo ($targetDir, $sourceDir, $fileName, $backup = $true) {
             Write-Output "Same existing file ('$fileName') will be replaced by hard link."
         }
         else {
-            RenameFileAsTimestamptedBackup $linkedPath
+            RenameAsTimestampedBackup $linkedPath
         }
     }
 
@@ -90,7 +96,7 @@ function ReplaceWitBackupAt ($targetDir, $sourceDir, $fileName) {
             return
         }
         else {
-            RenameFileAsTimestamptedBackup $targetPath
+            RenameAsTimestampedBackup $targetPath
         }
     }
 
