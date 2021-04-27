@@ -40,13 +40,12 @@ My personal environment's configuration
 
 1. Execute prepare script: [`> .\System\!prepare.ps1`](System/!prepare.ps1)
    * Script has a few switches. When any of then is present, only related changes will be executed. Script by default executes all of them.
-   * Available switches: `-OnlyTxtExt`, `-OnlyProcExp`, `-OnlyExplorer`, `-OnlyFixCtxMenu`.
+   * Available switches: `-AssocTxtfile`, `CleanUpCtxMenu`, `-PrepareExplorer`.
 2. That script have to be executed from `PSSession` elevated to _Admin_ from target user.
 3. What does that script do?
-   * Will setup every [defined files' extensions](System/extensions.txt) to be treated as Text-Based files by _Windows Explorer_. Switch: `-OnlyTxtExt`
-   * Will schedule [_Process Explorer_](https://chocolatey.org/packages/procexp) by _Mark Russinovich_ to start on _Logon_ of any user. Switch: `-OnlyProcExp`
-   * Will fix _Explorer's_ configuration and setup [_Quick Access_](https://support.microsoft.com/en-us/help/4027032/windows-pin-remove-and-customize-in-quick-access) with a few handy folders. It will also embellish current user's directory `~/Repos` with appropriate [icon](System/template_Repos/GitDirectory.png) for _Git_. Switch: `-OnlyExplorer`
-   * Will cleanup context menu for folders with unnecessary entries. Switch: `-OnlyFixCtxMenu`
+   * `-AssocTxtfile`: Will setup every [defined files' extensions](System/txtfile_extensions.txt) to be treated as Text-Based files by _Windows Explorer_.
+   * `-CleanUpCtxMenu`: Will clean up context menu of folders from unnecessary [defined entries](System/unwanted_cmds.txt).
+   * `-PrepareExplorer`: Will schedule [_Process Explorer_](https://chocolatey.org/packages/procexp) by _Mark Russinovich_ to start on _Logon_ of any user. Will fix _Explorer's_ configuration and setup [_Quick Access_](https://support.microsoft.com/en-us/help/4027032/windows-pin-remove-and-customize-in-quick-access) with a few handy folders. It will also embellish current user's directory `~/Repos` with appropriate [icon](System/template_Repos/GitDirectory.png) for _Git_.
 
 ## Visual Studio Code
 

@@ -21,6 +21,7 @@
 
 # Programming language files:
 .fs
+.fsi
 .fsx
 .fsproj
 .hs
@@ -35,6 +36,7 @@
 .css
 .htm
 .html
+.xaml
 .sql
 .ps1
 .cmd
@@ -64,6 +66,7 @@
 .config
 .xml
 .xsl
+.xslt
 .xsd
 .properties
 

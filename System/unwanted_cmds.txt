@@ -6,9 +6,15 @@
 #
 
 
-AddToPlaylistVLC
-AnyCode
+# Git for Windows:
 git_gui
 git_shell
-PDF24
+
+# Visual Studio:
+AnyCode
+
+# Other items:
+AddToPlaylistVLC
 PlayWithVLC
+grepWin
+PDF24
