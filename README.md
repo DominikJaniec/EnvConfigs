@@ -35,7 +35,6 @@ My personal environment's configuration
 2. That script requires _Git_ with _Bash_, which should been already installed via [_Chocolatey_ step](#software-via-chocolatey).
 3. What does that script do?
    * Will hard-link configuration files ([`.gitconfig`](ShellGit/.gitconfig), [`.bashrc`](ShellGit/.bashrc)) into _Home_ (`~/`) directory of current user.
-   * Will hard-link [_ConEmu_](https://chocolatey.org/packages/ConEmu)'s configuration file ([`ConEmu.xml`](ShellGit/ConEmu.xml)) into user's _AppData_ directory, when available.
 
 ## Windows configuration
 
@@ -47,7 +46,7 @@ My personal environment's configuration
    * Will setup every [defined files' extensions](System/extensions.txt) to be treated as Text-Based files by _Windows Explorer_. Switch: `-OnlyTxtExt`
    * Will schedule [_Process Explorer_](https://chocolatey.org/packages/procexp) by _Mark Russinovich_ to start on _Logon_ of any user. Switch: `-OnlyProcExp`
    * Will fix _Explorer's_ configuration and setup [_Quick Access_](https://support.microsoft.com/en-us/help/4027032/windows-pin-remove-and-customize-in-quick-access) with a few handy folders. It will also embellish current user's directory `~/Repos` with appropriate [icon](System/template_Repos/GitDirectory.png) for _Git_. Switch: `-OnlyExplorer`
-   * Will cleanup context menu for folders with unnecessary entries. It will also setup new entry: _Open Bash here_ at folders, only when [_ConEmu_](https://chocolatey.org/packages/ConEmu) and _Bash_ from _Git_ are available. Switch: `-OnlyFixCtxMenu`
+   * Will cleanup context menu for folders with unnecessary entries. Switch: `-OnlyFixCtxMenu`
 
 ## Visual Studio Code
 

@@ -2,6 +2,8 @@ param([switch]$LinkBack)
 
 . ".\common.ps1"
 
+$ExpectedPath_GitBash = Join-Path $Env:PROGRAMFILES "Git\git-bash.exe"
+
 function EnsureGitAvailable {
     try {
         Write-Output ">> User's configuration for Git in version:"
@@ -40,31 +42,15 @@ function SetupGitBashEnvironment {
     }
 }
 
-function SetupConEmuConfiguration {
-    if (CouldNotFindForConfig "ConEmu" $ExpectedPath_ConEmu) {
-        return
-    }
-
-    Write-Output "`n>> Linking ConEmu's configuration file in 'AppData' directory:"
-    if ($LinkBack.IsPresent) {
-        MakeHardLinkTo $PSScriptRoot $Env:APPDATA "ConEmu.xml" $false
-    }
-    else {
-        MakeHardLinkTo $Env:APPDATA $PSScriptRoot "ConEmu.xml"
-    }
-}
-
 #######################################################################################
 
 EnsureGitAvailable
 
 SetupGitConfiguration
 SetupGitBashEnvironment
-SetupConEmuConfiguration
 
 Write-Output "`n>> Git and Bash shell preparation: Done."
 
 if ($LinkBack.IsPresent) {
     Write-Output ">> HardLink have been created into this Repository."
 }
-

@@ -20,7 +20,6 @@ core|putty.install
 work|hxd
 work|cpu-z.install
 work|gpu-z
-work|conemu
 work|powershell-core --install-arguments="'ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1'"
 work|psake
 work|f.lux.install

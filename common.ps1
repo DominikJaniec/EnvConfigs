@@ -2,11 +2,6 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
 
-$ExpectedPath_GitBash = Join-Path $Env:PROGRAMFILES "Git\git-bash.exe"
-$ExpectedPath_ConEmu = Join-Path $Env:PROGRAMFILES "ConEmu\ConEmu64.exe"
-
-$ProfilePath_Repos = Join-Path $Env:USERPROFILE "Repos"
-
 function CouldNotFindForConfig ($name, $fullPath) {
     $notFound = -not (Test-Path $fullPath)
     if ($notFound) {

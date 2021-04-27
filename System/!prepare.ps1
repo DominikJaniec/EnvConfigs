@@ -7,7 +7,9 @@ param(
 
 . ".\common.ps1"
 
-$ProcessExplorer = Join-Path $Env:ChocolateyInstall "lib\procexp\tools\procexp.exe"
+
+$ProfilePath_Repos = Join-Path $Env:USERPROFILE "Repos"
+$ExpectedPath_ProcessExplorer = Join-Path $Env:ChocolateyInstall "lib\procexp\tools\procexp.exe"
 
 function ShouldExecuteEverything {
     $any = $OnlyTxtExt.IsPresent `
@@ -36,7 +38,7 @@ function SetTextFilesExtensions () {
 
 function ScheduleProcessExplorer () {
     Write-Output "`n>> Scheduling autostart of Process Explorer on user logon."
-    if (CouldNotFindForConfig "Process Explorer" $ProcessExplorer) {
+    if (CouldNotFindForConfig "Process Explorer" $ExpectedPath_ProcessExplorer) {
         return
     }
 
@@ -46,7 +48,7 @@ function ScheduleProcessExplorer () {
 
     if ($LASTEXITCODE -ne 0) {
         Write-Output ">> Scheduling new task: '$scheduleName'"
-        cmd.exe /C "schtasks /Create /SC ONLOGON /TN `"$scheduleName`" /TR `"$ProcessExplorer /t`""
+        cmd.exe /C "schtasks /Create /SC ONLOGON /TN `"$scheduleName`" /TR `"$ExpectedPath_ProcessExplorer /t`""
     }
 
     Write-Output ">> Process Explorer scheduled to autostart on logon."
@@ -99,32 +101,6 @@ function GenerateContextMenuRegistryKeys ($registryKeys) {
     | ForEach-Object { "HKCR:\Directory\Background\shell\$_" }
 
     return @($direct) + $background
-}
-
-function SetupContextMenuWithBash () {
-    Write-Output "`n>> Configuring Explorer's context menu with Bash shell via ConEmu."
-    if (CouldNotFindForConfig "ConEmu" $ExpectedPath_ConEmu `
-            -or CouldNotFindForConfig "GitBash" $ExpectedPath_GitBash) {
-        return
-    }
-
-    GenerateContextMenuRegistryKeys @("ViaConEmu_GitBash") `
-    | Where-Object { -not (Test-Path $_) } `
-    | ForEach-Object {
-        $regKey = $_
-        New-Item $regKey -Value "Open &Bash here" | Out-Null
-        Set-ItemProperty $regKey Icon $ExpectedPath_GitBash
-
-        $command = "`"$ExpectedPath_ConEmu`" -NoSingle -Dir `"%V`" -run {Bash::Git bash}"
-        New-Item "$regKey\command" -Value $command | Out-Null
-
-        Write-Output ">> >> Windows context menu for Bash created at: '$regKey'."
-    }
-
-    & $ExpectedPath_ConEmu -UpdateJumpList -run exit
-    # & $ExpectedPath_ConEmu -UpdateJumpList -Exit
-    # TODO : https://github.com/Maximus5/ConEmu/issues/1478
-    Write-Output ">> Windows Explorer and Bash shell via ConEmu integration done."
 }
 
 function CleanupContextMenuItems () {
@@ -192,7 +168,6 @@ if ($all -or $OnlyExplorer.IsPresent) {
 
 if ($all -or $OnlyFixCtxMenu.IsPresent) {
     CleanupContextMenuItems
-    SetupContextMenuWithBash
 }
 
 Write-Output "`n>> System preparation: Done."
