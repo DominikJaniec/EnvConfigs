@@ -19,11 +19,12 @@ My personal environment's configuration
 ## Software via Chocolatey
 
 1. Execute prepare script: [`> .\Choco\!prepare.ps1`](Choco/!prepare.ps1)
-   * Optional script's parameter: `-PkgLevel (core|work|full)`
+   * Optional script's parameter: `-PkgLevel (core|tools|dev|full)`
    * Default value is assumed to be: `-PkgLevel full`
+   * Each value encompass all previous levels.
 2. That script requires _Chocolatey_ and have to be executed from `PSSession` elevated to _Admin_.
 3. What does that script do?
-   * Will turn on `choco`'s feature: [_Use Remembered Arguments For Upgrades_](https://chocolatey.org/docs/chocolatey-configuration#general-2).
+   * Will turn on `choco`'s feature: [_Use Remembered Arguments For Upgrades_](https://docs.chocolatey.org/en-us/configuration#general-1).
    * Will install every [defined applications](Choco/packages.txt) according to selected packages level.
    * Some packages or their dependencies may require reboot after installation.
 

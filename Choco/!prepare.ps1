@@ -1,6 +1,7 @@
 param([string]$PkgLevel = "full")
 
-$PackagesLevels = @("core", "work", "full")
+$PackagesLevels = @("core", "tools", "dev", "full")
+
 . ".\common.ps1"
 
 function EnsureChocoAvailable {
@@ -17,7 +18,7 @@ function EnsureChocoAvailable {
 
 function EnableRememberedArguments {
     Write-Output ">> Enabling Chocolatey's feature: Use Remembered Arguments For Upgrades..."
-    choco feature enable -n useRememberedArgumentsForUpgrades
+    choco feature enable --name useRememberedArgumentsForUpgrades
     if ($LASTEXITCODE -ne 0) {
         throw "Could not enable feature 'useRememberedArgumentsForUpgrades'"
     }
@@ -41,7 +42,7 @@ function PackagesLevelToIndex($pkgLevel) {
 
 function PackagesInstallExpressionsFrom ($sourceFile) {
     return LoadMetaLinesFrom $PSScriptRoot $sourceFile `
-        |  ForEach-Object {
+    | ForEach-Object {
         $lvl = $_.Metadata
         $pkg = $_.Value
 
@@ -53,6 +54,12 @@ function PackagesInstallExpressionsFrom ($sourceFile) {
     }
 }
 
+function RefreshEnvWithChoco {
+    # https://docs.chocolatey.org/en-us/create/functions/update-sessionenvironment
+    Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+    refreshenv
+}
+
 #######################################################################################
 
 EnsureChocoAvailable
@@ -60,7 +67,7 @@ EnableRememberedArguments
 
 $levelIdx = PackagesLevelToIndex $PkgLevel
 $expressions = PackagesInstallExpressionsFrom "packages.txt" `
-    | Where-Object { $_.Index -le $levelIdx }
+| Where-Object { $_.Index -le $levelIdx }
 
 $total = @($expressions).Length
 Write-Output "`n>> Requested $total installations of software with packages level up to $levelIdx (-PkgLevel $PkgLevel)."
@@ -74,5 +81,9 @@ foreach ($expr in $expressions) {
 }
 
 Write-Output "`n##############################################################################"
+RefreshEnvWithChoco
+
+Write-Output "`n##############################################################################"
 Write-Output ">> Software installation via Chocolatey: Done."
-Write-Output "  -- Some packages may require reboot."
+Write-Output "  -- Some packages may require a reboot."
+Write-Output ""

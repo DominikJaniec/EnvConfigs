@@ -1,7 +1,7 @@
 ####################################################################
 # This file contains List of "install expressions" for Chocolatey.
 #
-# Each lines defines packages' level (core|work|full)
+# Each lines defines packages' level (core|tools|dev|full)
 #     and then after pipe (character '|') is defined expression
 #     which will be provided as parameter for install command:
 #     `choco install <install-expression> --confirm`
@@ -9,58 +9,107 @@
 # Empty lines or beginning with '#' are ignored.
 #
 
-core|7zip.install
+
 core|sysinternals
 core|procexp
-core|ditto.install
-core|notepad3.install
-core|git.install --package-parameters="'/GitAndUnixToolsOnPath /NoShellIntegration'"
-core|putty.install
+core|hashcheck
+core|7zip
+core|notepad3
+core|dotnet-runtime
+core|git.install --params "/GitAndUnixToolsOnPath /NoShellIntegration"
+core|powershell-core --install-arguments="ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1"
+core|microsoft-windows-terminal
 
-work|hxd
-work|cpu-z.install
-work|gpu-z
-work|powershell-core --install-arguments="'ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1'"
-work|psake
-work|f.lux.install
-work|windirstat
-work|dotnetcore-sdk
-work|dotnet4.7.1
-work|nodejs-lts
-work|linqpad5.install
-work|screentogif
-work|grepwin
-work|rdcman
-work|adobereader --package-parameters="'/RemoveDesktopIcons'"
-work|googlechrome
-work|firefox
-work|spotify
 
-full|docker-for-windows
-full|haskell-stack
-full|elm-platform
-full|paket
-full|fake
-full|google-backup-and-sync
-full|dropbox
-full|pdf24
-full|paint.net
-full|inkscape
-full|graphviz
-full|virtualbox --package-parameters="'/NoDesktopShortcut /NoQuickLaunch'"
-full|winscp.install
-full|miktex.install
-full|nmap
-full|wireshark
-full|sqlitebrowser
-full|mirc
-full|vlc
-full|audacity
-full|exiftool
-full|exiftoolgui
-full|tagscanner
+tools|firefox --params "/NoDesktopShortcut"
+tools|hwinfo
+tools|f.lux
+tools|ditto
+tools|neovim
+tools|powertoys
+tools|gpg4win
+tools|grepwin
+tools|winmerge
+tools|windirstat
+tools|screentogif
+tools|dotnet-desktopruntime
+tools|dotnetcore-runtime
+tools|dotnetcore3-desktop-runtime
+tools|dotnetfx
+tools|javaruntime
+tools|winscp
+tools|nmap
+tools|cpu-z
+tools|gpu-z
+tools|hxd
+tools|drawio
+tools|paint.net
+tools|irfanview
+tools|irfanviewplugins
+tools|inkscape
+tools|graphviz
+tools|exiftool
+tools|audacity
+tools|vlc
+tools|pdf24 --params "/Basic"
+tools|adobereader
+tools|rufus
+tools|cdburnerxp
+
+
+dev|vscode.install --params "/NoDesktopIcon /DontAssociateWithFiles"
+dev|googlechrome
+dev|dotnet-sdk
+dev|dotnetcore-sdk
+dev|netfx-4.8-devpack
+dev|linqpad
+dev|ilspy
+dev|paket
+dev|fake
+dev|psake
+dev|nodejs-lts
+dev|yarn
+dev|curl
+dev|fiddler
+dev|wireshark
+dev|sqlitebrowser
+dev|virtualbox --params "/NoDesktopShortcut"
+dev|docker-desktop
+dev|kubernetes-cli
+dev|minikube
+dev|pandoc
+dev|miktex
+dev|typescript
+dev|haskell-stack
+dev|elm-platform
+dev|erlang
+dev|elixir
+dev|racket
+dev|llvm
+dev|rust
+dev|sbt
+dev|ruby
+dev|julia
+dev|golang
+dev|r.project
+dev|miniconda3
+dev|swi-prolog
+
+
 full|stellarium
-full|googleearth
+full|steam-client
+full|obs-studio
+full|twitch
+full|mirc
+full|discord
+full|ffmpeg
 full|youtube-dl
+full|0ad
+full|dropbox
+full|google-backup-and-sync
+full|googleearthpro
+full|tagscanner
+full|musescore
+full|tor-browser
 full|qbittorrent
 full|chocolateygui
