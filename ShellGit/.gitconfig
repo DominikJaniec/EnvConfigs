@@ -33,18 +33,19 @@
 [alias]
     st = status
     lo = !git looog -9
-    co = checkout
+    br = branch
+    sw = switch
     df = diff
+    co = checkout
+    rs = reset
     ad = add -A
     cm = commit -m
     rc = !git recommit-do-it
-    rs = reset
-    pl = pull
-    ps = push
+    cp = cherry-pick
     ft = fetch
     mg = merge
-    br = branch
-    cp = cherry-pick
+    pl = pull
+    ps = push
     dt = difftool -t vscode
     mt = mergetool -t vscode
 
@@ -59,7 +60,7 @@
     recommit-do-it = !git recommit --no-edit
     save-as = !sh -c 'git cm \"SAVE: $0 [staged]\" --no-gpg-sign >> /dev/null || true && git ad >> /dev/null 2>> /dev/null && git cm \"SAVE: $0 [changes]\" --no-gpg-sign >> /dev/null || true && git looog -3'
     save = !sh -c 'git save-as \"Temporary commit on $(date \"+%Y-%m-%d %H:%M\")\"'
-    hidden = !git ls-files -v | grep \"^[^H] \"
+    hidden = !git ls-files -t | grep \"^S \" | cut --delimiter=\" \" --fields=2- --only-delimited
     hid-give = update-index --skip-worktree
     hid-recall = update-index --no-skip-worktree
     asided = !git branches _aside/*
@@ -68,8 +69,8 @@
     marked = !git branches _mark/*
     mark-with = !sh -c 'git branch \"_mark/$0\" && echo \"Marked HEAD with _mark/$0 branch.\"'
     mark = !sh -c 'git mark-with \"$(date +%Y-%m-%d_%H-%M)\"'
-    drop-untracked = !sh -c 'git st --porcelain | grep \"^?? \" | cut -d\" \" -f2- | xargs -r rm -Rv --'
-    drop-branches = !sh -c 'echo \"Beware! Will drop (pass --force) branches matching to: $0\" && git branches \"$0\" | xargs -r git branch -d $1'
+    drop-untracked = !sh -c 'git st --porcelain=v2 | grep \"^\\? \" | cut --delimiter=\" \" --fields=2- --only-delimited | xargs --delimiter=\"\\n\" --no-run-if-empty rm --dir --recursive --verbose --'
+    drop-branches = !sh -c 'echo \"Beware! Will drop branches matching to: $0\" && echo \"Might require --force for not already merged branches\" && git branches \"$0\" | xargs --delimiter=\"\\n\" --no-run-if-empty git branch --delete $1'
     drop-asided = !git drop-branches _aside/*
     drop-marked = !git drop-branches _mark/*
 
