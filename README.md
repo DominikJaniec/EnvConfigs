@@ -64,15 +64,10 @@ My personal environment's configuration
 1. Extensions and configuration presented in [file: `VSCommunity.md`](VSCommunity.md).
 2. Download and install it from [Microsoft (_Community_ version)](https://www.visualstudio.com/pl/vs/community/).
 
-## Additional software
+## Keyboard
 
-1. Because _Chocolatey_ is not solution for everyone, here are other applications worth to install.
-   * [**HWiNFO**](https://www.hwinfo.com/) - Comprehensive Hardware Analysis, Monitoring and Reporting for Windows and DOS.
-   * [**Code Compare**](https://www.devart.com/codecompare/) - A free tool designed to compare and merge differing files and folders.
-   * [**Fiddler**](https://www.telerik.com/fiddler) - The free web debugging proxy for any browser, system or platform.
-   * [**dotPeek**](https://www.jetbrains.com/decompiler/) - Free .NET Decompiler and Assembly Browser (part of ReSharper).
-   * [**CapsLock Indicator**](https://github.com/jonaskohl/CapsLockIndicator) - A small utility that indicates the state of the Num lock, Caps lock and Scroll lock key.
-   * [**Free Alarm Clock**](http://freealarmclocksoftware.com/) - This freeware program allows you to set as many alarms as you want.
+1. Use any _Ergodox_ compatible devices and load [`recent.hex`](Keyboard/recent.hex) layout.
+2. More details one can find at: [`Keyboard/README.md`](Keyboard/README.md).
 
 ----
 
@@ -81,7 +76,6 @@ _Assumptions and remarks:_
 * Headers presented above are set in proposed order of execution of configuration steps.
 * Most of steps expects that, this Repository had been cloned under path: `~/Repos/EnvConfigs`.
 * Every _prepare script_ (`!prepare.ps1`) should be run from this Repository's root directory via _PowerShell_.
+* To execute those _prepare scripts_ [_PowerShell_](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-windows?view=powershell-7.1) is to be expected in version bigger then 3. Windows 10 currently comes with version 5, however to check one can use: `$PSVersionTable.PSVersion` variable.
 * Almost all _prepare scripts_ expect to be run within _PowerShell_ session with elevated permissions to the _Administrator Role_.
-* Some scripts provides switch: `-LinkBack`, because _Git_ likes to break `Hard-Links` on checkouts.
-* Expecting [_PowerShell_](https://docs.microsoft.com/en-us/powershell/scripting/setup/installing-windows-powershell?view=powershell-6) to be in version bigger then 3, check: `$PSVersionTable.PSVersion` variable.
 * To obtain elevated PowerShell console, just execute: [`$#> PowerShell.exe -File ".\!elevate.ps1"`](!elevate.ps1)
