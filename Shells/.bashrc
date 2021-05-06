@@ -1,3 +1,11 @@
+####################################################################
+###          Domin's  Bash profile's configuration file          ###
+####################################################################
+
+
+####################################################################
+### Environment: initial setup & configuration
+
 alias ls="ls -F --color=auto --show-control-chars"
 alias ll="ls -lh"
 alias la="ll -A"
@@ -23,7 +31,7 @@ alias egrep="egrep --color=auto"
 alias fgrep="fgrep --color=auto"
 
 
-#####################################################################
+####################################################################
 ### Git:
 
 source ~/Repos/EnvConfigs/ShellGit/prompt-setter.sh
@@ -50,7 +58,7 @@ alias gdt="git dt"
 alias gmt="git mt"
 
 
-#####################################################################
+####################################################################
 ### .NET Core CLI:
 
 # Taken from: https://github.com/dotnet/cli/blob/master/Documentation/general/tab-completion.md

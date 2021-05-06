@@ -28,20 +28,21 @@ My personal environment's configuration
    * Will install every [defined applications](Choco/packages.txt) according to selected packages level.
    * Some packages or their dependencies may require reboot after installation.
 
-## Bash shell & Git configuration
+## Shells & Git configuration
 
-1. Execute prepare script: [`> .\ShellGit\!prepare.ps1`](ShellGit/!prepare.ps1)
-   * Optional script's switch: `-LinkBack`
-   * When set, only hard-links configuration files back into this repository.
-2. That script requires _Git_ with _Bash_, which should been already installed via [_Chocolatey_ step](#software-via-chocolatey).
+1. Execute prepare script: [`> .\Shells\!prepare.ps1`](Shells/!prepare.ps1)
+   * Script does not have any parameters.
+2. That script have to be executed from `PSSession` elevated to _Admin_ from target user.
+   * This requirement could be lifted, when creating `SymbolicLink` will be available to normal users.
 3. What does that script do?
-   * Will hard-link configuration files ([`.gitconfig`](ShellGit/.gitconfig), [`.bashrc`](ShellGit/.bashrc)) into _Home_ (`~/`) directory of current user.
+   * Will make symbolic-links at _Home_ (`~/`) directory of current user with Bash and Git configuration files: [`.bash_profile`](Shells/.bash_profile) + [`.bashrc`](Shells/.bashrc), and [`.gitconfig`](Shells/.gitconfig).
+   * Symbolic-link will also be created for profile-file for PowerShell at [`~/Documents/PowerShell/Profile.ps1`](Shells/Profile.ps1) - no profile for old but default PowerShell 5.
 
 ## Windows configuration
 
 1. Execute prepare script: [`> .\System\!prepare.ps1`](System/!prepare.ps1)
    * Script has a few switches. When any of then is present, only related changes will be executed. Script by default executes all of them.
-   * Available switches: `-AssocTxtfile`, `CleanUpCtxMenu`, `-PrepareExplorer`.
+   * Available switches: `-AssocTxtfile`, `-CleanUpCtxMenu`, `-PrepareExplorer`.
 2. That script have to be executed from `PSSession` elevated to _Admin_ from target user.
 3. What does that script do?
    * `-AssocTxtfile`: Will setup every [defined files' extensions](System/txtfile_extensions.txt) to be treated as Text-Based files by _Windows Explorer_.

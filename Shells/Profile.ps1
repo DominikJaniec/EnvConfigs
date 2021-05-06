@@ -1,4 +1,3 @@
-#/ "C:\Users\Dominik\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
 ####################################################################
 ###      Domin's  PowerShell 7 profile's configuration file      ###
 ####################################################################
@@ -7,6 +6,7 @@
 ####################################################################
 ### Environment: initial setup & configuration
 
+function cd.. { Set-Location .. }
 function .. { Set-Location .. }
 function ... { Set-Location ../.. }
 function .... { Set-Location ../../.. }
@@ -140,16 +140,17 @@ Set-Alias -Name g `
 
 function gst { git st }
 function glo { git lo }
+function gbr { git br }
+function gsw { git sw }
 function gdf { git df }
 function gco { git co }
 function grs { git rs }
 function gad { git ad }
 function gcm { git cm }
 function grc { git rc }
-function gbr { git br }
-function gsw { git sw }
-function gmg { git mg }
+function gcp { git cp }
 function gft { git ft }
+function gmg { git mg }
 function gpl { git pl }
 function gps { git ps }
 function gdt { git dt }

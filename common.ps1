@@ -2,24 +2,41 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
 
-function CouldNotFindForConfig ($name, $fullPath) {
-    $notFound = -not (Test-Path $fullPath)
+function CouldNotFindForConfig ($what, $path) {
+    $notFound = -not (Test-Path $path)
     if ($notFound) {
-        Write-Output ">> Could not find '$name' at: '$fullPath', configuration skipped."
+        Write-Output ">> Could not find '$what' at: '$path', configuration skipped."
     }
 
     return $notFound
 }
 
-function EnsurePathExists ($path) {
+function CreateMissingDirectory ($dirPath) {
+    if (Test-Path $dirPath -PathType Leaf) {
+        throw "There is already a File under: '$dirPath'."
+    }
+
+    if (-not (Test-Path $dirPath -PathType Container)) {
+        New-Item $dirPath -ItemType Directory -Force `
+        | Out-Null
+    }
+}
+
+function EnsurePathExists ($path, [switch]$AsFile) {
     if (-not (Test-Path $path)) {
-        throw "Could not find anything under path: $path"
+        throw "Could not find anything under path: '$path'."
+    }
+
+    if ($asFile.IsPresent) {
+        if (-not (Test-Path $path -PathType Leaf)) {
+            throw "Expecting to find a File under: '$path'."
+        }
     }
 }
 
 function LoadLinesFrom ($sourceDir, $sourceFile) {
     $sourceFilePath = Join-Path $sourceDir $sourceFile
-    EnsurePathExists $sourceFilePath
+    EnsurePathExists $sourceFilePath -AsFile
 
     return Get-Content $sourceFilePath -Force `
     | ForEach-Object { $_.trim() } `
@@ -40,13 +57,27 @@ function LoadMetaLinesFrom ($sourceDir, $sourceFile) {
 }
 
 function AreSameFiles ($leftFilePath, $rightFilePath) {
-    $left = Get-Content $leftFilePath -Force
-    $right = Get-Content $rightFilePath -Force
-    if (Compare-Object $left $right) {
-        return $false
+    function GetRaw ($filePath) {
+        EnsurePathExists $filePath -AsFile
+
+        if ($PSVersionTable.PSVersion.Major -ge 6) {
+            return Get-Content $filePath -AsByteStream -Force
+        }
+        else {
+            return Get-Content $filePath -Encoding Byte -Force
+        }
     }
-    else {
-        return $true
+
+    try {
+        $left = GetRaw $leftFilePath
+        $right = GetRaw $rightFilePath
+        $result = Compare-Object $left $right
+        return $null -eq $result
+    }
+    catch [System.IO.DirectoryNotFoundException] {
+        # Note: If file exist, but while loading we got this exception,
+        #       we can assume, that it is broken/dead Symbolic-Link.
+        return $false
     }
 }
 
@@ -54,8 +85,45 @@ function RenameAsTimestampedBackup ($filePath) {
     $timestamp = Get-Date -Format yyyyMMdd-HHmmss
     $newPath = "$filePath.$timestamp.bak"
 
-    Rename-Item -Path $filePath -NewName $newPath -Force
+    Rename-Item $filePath -NewName $newPath -Force
     Write-Output "Existing path had been renamed as backup: '$newPath'."
+}
+
+function MakeSymLinksAt ($targetDir, $sourceDir, $files) {
+    function SymLinkFile ($fileName) {
+        $targetPath = Join-Path $targetDir $fileName
+        $sourcePath = Join-Path $sourceDir $fileName
+        EnsurePathExists $sourcePath -AsFile
+
+        if (Test-Path $targetPath -PathType Container) {
+            throw "Linking is only allowed between files." `
+                + " Cannot make link at '$targetPath'."
+        }
+
+        if (Test-Path $targetPath) {
+            Write-Output "Existing file '$fileName' will be replaced."
+            if (AreSameFiles $targetPath $sourcePath) {
+                Remove-Item $targetPath -Force
+            }
+            else {
+                RenameAsTimestampedBackup $targetPath
+            }
+        }
+
+        New-Item $targetPath -ItemType SymbolicLink -Value $sourcePath `
+        | Out-Null
+
+        Write-Output "File Symbolic-Link has been created:"
+        Write-Output "`t At '$(Resolve-Path $targetPath)'"
+        Write-Output "`t => '$(Resolve-Path $sourcePath)'"
+    }
+
+    Write-Output "Making Symbolic-Links at '$targetDir' into '$sourceDir'..."
+    EnsurePathExists $targetDir
+
+    (@() + $files) | ForEach-Object {
+        SymLinkFile $_
+    }
 }
 
 function MakeHardLinkTo ($targetDir, $sourceDir, $fileName, $backup = $true) {
@@ -66,11 +134,11 @@ function MakeHardLinkTo ($targetDir, $sourceDir, $fileName, $backup = $true) {
     if (Test-Path $linkedPath) {
         if (-not $backup) {
             Remove-Item -Path $linkedPath -Force
-            Write-Output "Existing file ('$fileName') had been deleted, linked file will replace it."
+            Write-Output "Existing file '$fileName' had been deleted, linked file will replace it."
         }
         elseif (AreSameFiles $linkedPath $sourcePath) {
             Remove-Item -Path $linkedPath -Force
-            Write-Output "Same existing file ('$fileName') will be replaced by hard link."
+            Write-Output "Same existing file '$fileName' will be replaced by hard link."
         }
         else {
             RenameAsTimestampedBackup $linkedPath
@@ -78,6 +146,21 @@ function MakeHardLinkTo ($targetDir, $sourceDir, $fileName, $backup = $true) {
     }
 
     cmd.exe /C mklink /H "$linkedPath" "$sourcePath"
+}
+
+function MakeHardLinkInto ($targetDir, $sourceDir, $files, [switch]$back) {
+    $backupTarget = $true
+    if ($back.IsPresent) {
+        $tempSwap = $targetDir
+        $targetDir = $sourceDir
+        $sourceDir = $tempSwap
+        $backupTarget = $false
+    }
+
+    Write-Output "Making Hard-Link into '$targetDir' from '$sourceDir'..."
+    (@() + $files) | ForEach-Object {
+        MakeHardLinkTo $targetDir $sourceDir $_ $backupTarget
+    }
 }
 
 function ReplaceWitBackupAt ($targetDir, $sourceDir, $fileName) {

@@ -21,7 +21,7 @@ function __PS_resolve_context () {
     __PS_var__last_exticode=${?}
 
     local current_history=`history 1`
-    # Prompt should be simplified when user rams with empty lines:
+    # Prompt should be simplified when User rams with empty lines:
     if [ "${__PS_var__last_history}" \< "${current_history}" ]; then
         __PS_var__simplified=false
         __PS_var__last_history=${current_history}
@@ -38,7 +38,7 @@ function __PS_resolve_context () {
 
     local full_context=""
     # Full context should be resolve and set only when Prompt is not simplified:
-    if [ "${__PS_var__simplified}" = false  ]; then
+    if [ "${__PS_var__simplified}" = false ]; then
         local git_data=$(__git_ps1)
         if [ -n "$git_data" ]; then
             full_context+="\x01${__PS_git_info}\x02${git_data}"
