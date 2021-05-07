@@ -1,19 +1,22 @@
 param(
     [switch]$AssocTxtfile,
     [switch]$CleanUpCtxMenu,
-    [switch]$PrepareExplorer
+    [switch]$PrepareExplorer,
+    [switch]$InstallUpdateScript
 )
 
 . ".\common.ps1"
 
 
 $ProfilePath_Repos = Join-Path $Env:USERPROFILE "Repos"
+$ExpectedPath_KnownPATH = Join-Path $Env:ChocolateyInstall "bin"
 $ExpectedPath_ProcessExplorer = Join-Path $Env:ChocolateyInstall "lib\procexp\tools\procexp.exe"
 
 function ShouldExecuteEverything {
     $any = $AssocTxtfile.IsPresent `
         -or $CleanUpCtxMenu.IsPresent `
-        -or $PrepareExplorer.IsPresent
+        -or $PrepareExplorer.IsPresent `
+        -or $InstallUpdateScript.IsPresent
 
     return -not $any
 }
@@ -146,6 +149,14 @@ function EmbellishRepos () {
     Write-Output ">> 'Repos' folder's appearance changed."
 }
 
+function SetupUpdateScript {
+    $updateScript = "update-system.bat"
+    LogLines -Bar "Installing '$updateScript' script within PATH known directory..."
+    MakeSymLinksAt $ExpectedPath_KnownPATH $PSScriptRoot $updateScript
+
+    LogLines "Script '$updateScript' should be available for Admin."
+}
+
 #######################################################################################
 
 $all = ShouldExecuteEverything
@@ -163,6 +174,10 @@ if ($all -or $PrepareExplorer.IsPresent) {
     ScheduleProcessExplorer
     SetupWindowsExplorer
     EmbellishRepos
+}
+
+if ($all -or $InstallUpdateScript.IsPresent) {
+    SetupUpdateScript
 }
 
 Write-Output "`n>> System preparation: Done."

@@ -22,7 +22,7 @@ function PreparePwsh {
         $total = $modules.Length
         $counter = 1
         foreach ($module in $modules) {
-            $expr = "Install-Module -Name $module -Repository $repo -AcceptLicense -Scope AllUsers"
+            $expr = "Install-Module -Name $module -Repository $repo"
             LogLines -lvl 3 "[$counter/$total] executing within pwsh:`n$($expr)"
             pwsh -Command $expr
             $counter += 1

@@ -49,7 +49,7 @@ function PackagesInstallExpressionsFrom ($sourceFile) {
         return @{
             Level   = $lvl;
             Index   = PackagesLevelToIndex $lvl;
-            Install = "choco install $pkg --confirm"
+            Install = "choco install $pkg --yes"
         }
     }
 }
