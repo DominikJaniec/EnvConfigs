@@ -1,22 +1,46 @@
 . ".\common.ps1"
 
 function PrepareGit {
-    Write-Output "`n>> Linking Git configuration file at Home directory:"
+    LogLines -Bar "Linking Git configuration file at Home directory:"
     MakeSymLinksAt $Env:USERPROFILE $PSScriptRoot ".gitconfig"
 }
 
 function PrepareBash {
-    Write-Output "`n>> Linking Bash profile files at Home directory:"
-    MakeSymLinksAt $Env:USERPROFILE $PSScriptRoot @(".bash_profile", ".bashrc")
+    LogLines -Bar "Linking Bash profile files at Home directory:"
+    MakeSymLinksAt $Env:USERPROFILE $PSScriptRoot ".bash_profile", ".bashrc"
 }
 
-function PreparePowerShell {
-    Write-Output "`n>> Linking PowerShell profile file of current User:"
-    $pwshProfileDir = Join-Path $HOME "Documents"
-    EnsurePathExists $pwshProfileDir
-    $pwshProfileDir = Join-Path $pwshProfileDir "PowerShell"
-    CreateMissingDirectory $pwshProfileDir
-    MakeSymLinksAt $pwshProfileDir $PSScriptRoot "Profile.ps1"
+function PreparePwsh {
+    function InstalModules {
+        LogLines -lvl 2 "Installing expected pwsh Modules:"
+
+        $repo = "PSGallery"
+        LogLines -lvl 3 "Setting standard '$repo' as trusted repository for pwsh..."
+        pwsh -Command "Set-PSRepository -Name $repo -InstallationPolicy Trusted"
+
+        $modules = @("posh-git", "oh-my-posh")
+        $total = $modules.Length
+        $counter = 1
+        foreach ($module in $modules) {
+            $expr = "Install-Module -Name $module -Repository $repo -AcceptLicense -Scope AllUsers"
+            LogLines -lvl 3 "[$counter/$total] executing within pwsh:`n$($expr)"
+            pwsh -Command $expr
+            $counter += 1
+        }
+    }
+
+    function LinkProfile {
+        LogLines -lvl 2 "Linking Profile file of current User:"
+        $profileDir = Join-Path $HOME "Documents"
+        EnsurePathExists $profileDir
+        $profileDir = Join-Path $profileDir "PowerShell"
+        CreateMissingDirectory $profileDir
+        MakeSymLinksAt $profileDir $PSScriptRoot "Profile.ps1"
+    }
+
+    LogLines -Bar "Configuring PowerShell for current User:"
+    InstalModules
+    LinkProfile
 }
 
 #######################################################################################
@@ -24,4 +48,4 @@ function PreparePowerShell {
 Write-Output "Preparing shells configuration..."
 PrepareGit
 PrepareBash
-PreparePowerShell
+PreparePwsh

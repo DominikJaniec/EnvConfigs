@@ -17,11 +17,13 @@ core|7zip
 core|notepad3
 core|dotnet-runtime
 core|git.install --params "/GitAndUnixToolsOnPath /NoShellIntegration"
-core|powershell-core --install-arguments="ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1"
+core|powershell-core --install-arguments='"ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1"'
 core|microsoft-windows-terminal
 
 
 tools|firefox --params "/NoDesktopShortcut"
+tools|cascadiacodepl
+tools|firacodenf
 tools|hwinfo
 tools|f.lux
 tools|ditto

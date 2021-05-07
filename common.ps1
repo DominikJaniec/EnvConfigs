@@ -1,6 +1,26 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
-$PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
+$PSDefaultParameterValues["*:ErrorAction"] = "Stop"
+
+
+function LogLines ($lines, $lvl = 1, [switch]$Bar) {
+    $barLine = New-Object `
+        -TypeName "System.String" `
+        -ArgumentList @('#', 69)
+
+    if ($Bar.IsPresent) {
+        Write-Output "`n$barLine"
+    }
+
+    (@() + $lines) | ForEach-Object {
+        $line = $_
+        1..$lvl | ForEach-Object {
+            $line = ">> " + $line
+        }
+
+        Write-Output $line
+    }
+}
 
 function CouldNotFindForConfig ($what, $path) {
     $notFound = -not (Test-Path $path)
@@ -76,7 +96,7 @@ function AreSameFiles ($leftFilePath, $rightFilePath) {
     }
     catch [System.IO.DirectoryNotFoundException] {
         # Note: If file exist, but while loading we got this exception,
-        #       we can assume, that it is broken/dead Symbolic-Link.
+        #       we can assume that it is a broken/dead Symbolic-Link.
         return $false
     }
 }
@@ -146,21 +166,6 @@ function MakeHardLinkTo ($targetDir, $sourceDir, $fileName, $backup = $true) {
     }
 
     cmd.exe /C mklink /H "$linkedPath" "$sourcePath"
-}
-
-function MakeHardLinkInto ($targetDir, $sourceDir, $files, [switch]$back) {
-    $backupTarget = $true
-    if ($back.IsPresent) {
-        $tempSwap = $targetDir
-        $targetDir = $sourceDir
-        $sourceDir = $tempSwap
-        $backupTarget = $false
-    }
-
-    Write-Output "Making Hard-Link into '$targetDir' from '$sourceDir'..."
-    (@() + $files) | ForEach-Object {
-        MakeHardLinkTo $targetDir $sourceDir $_ $backupTarget
-    }
 }
 
 function ReplaceWitBackupAt ($targetDir, $sourceDir, $fileName) {

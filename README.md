@@ -36,7 +36,8 @@ My personal environment's configuration
    * This requirement could be lifted, when creating `SymbolicLink` will be available to normal users.
 3. What does that script do?
    * Will make symbolic-links at _Home_ (`~/`) directory of current user with Bash and Git configuration files: [`.bash_profile`](Shells/.bash_profile) + [`.bashrc`](Shells/.bashrc), and [`.gitconfig`](Shells/.gitconfig).
-   * Symbolic-link will also be created for profile-file for PowerShell at [`~/Documents/PowerShell/Profile.ps1`](Shells/Profile.ps1) - no profile for old but default PowerShell 5.
+   * Will install pwsh-modules: [`posh-git`](https://www.powershellgallery.com/packages/posh-git) and [`oh-my-posh`](https://www.powershellgallery.com/packages/oh-my-posh), which are utilized by `Profile.ps1` for more user friendly UX of terminal.
+   * Symbolic-link will also be created for profile-file for PowerShell at [`~/Documents/PowerShell/Profile.ps1`](Shells/Profile.ps1) - no profile for old but yet default PowerShell 5.
 
 ## Windows configuration
 
@@ -76,6 +77,5 @@ _Assumptions and remarks:_
 * Headers presented above are set in proposed order of execution of configuration steps.
 * Most of steps expects that, this Repository had been cloned under path: `~/Repos/EnvConfigs`.
 * Every _prepare script_ (`!prepare.ps1`) should be run from this Repository's root directory via _PowerShell_.
+* Almost all _prepare scripts_ expect to be run within _PowerShell_ session with elevated permissions to the _Administrator Role_. To obtain elevated PowerShell console, just execute: [`$#> PowerShell.exe -File ".\!elevate.ps1"`](!elevate.ps1)
 * To execute those _prepare scripts_ [_PowerShell_](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-windows?view=powershell-7.1) is to be expected in version bigger then 3. Windows 10 currently comes with version 5, however to check one can use: `$PSVersionTable.PSVersion` variable.
-* Almost all _prepare scripts_ expect to be run within _PowerShell_ session with elevated permissions to the _Administrator Role_.
-* To obtain elevated PowerShell console, just execute: [`$#> PowerShell.exe -File ".\!elevate.ps1"`](!elevate.ps1)

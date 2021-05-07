@@ -4,30 +4,16 @@
 
 
 ####################################################################
-### Environment: initial setup & configuration
+### Helpers
 
-function cd.. { Set-Location .. }
-function .. { Set-Location .. }
-function ... { Set-Location ../.. }
-function .... { Set-Location ../../.. }
-function ..... { Set-Location ../../../.. }
-function ...... { Set-Location ../../../../.. }
-function ....... { Set-Location ../../../../../.. }
-function ........ { Set-Location ../../../../../../.. }
-
-function o ($path) {
-  Set-Location -Path $path
-}
-
-function la {
-  Get-ChildItem -Force
-}
+### Note: Uncomment one whichever you need ;)
+# $DebugPreference = "Continue"
+# $VerbosePreference = "Continue"
 
 function pair ($fst, $snd) {
   return New-Object `
     "Tuple[object,object]"($fst, $snd)
 }
-
 
 function dump ($obj, $name = "Given object") {
   if ($null -eq $obj) {
@@ -38,6 +24,49 @@ function dump ($obj, $name = "Given object") {
     Write-Host ($obj | Format-Table | Out-String) -NoNewline
     Write-Host "===\\"
   }
+}
+
+function Write-DebugTimestamped ($Message) {
+  $timestamp = Get-Date -Format yyyyMMdd-HH:mm:ss.fff
+  Write-Debug "$timestamp| $Message"
+}
+
+Write-DebugTimestamped "Helpers for Profile.ps1 registered."
+
+
+####################################################################
+### Environment
+
+Write-DebugTimestamped "Defining Environment related commands..."
+
+Set-Alias -Name exp `
+  -Value explorer
+
+function Get-CmdletAlias ($cmdletName) {
+  Get-Alias `
+  | Where-Object -FilterScript { $_.Definition -like "$cmdletName" } `
+  | Format-Table -Property Definition, Name -AutoSize
+}
+
+Set-ALias -Name alias-for `
+  -Value Get-CmdletAlias
+
+Write-DebugTimestamped "Common aliases defined."
+
+
+### navigation and exploration
+
+function cd.. { Set-Location .. }
+function .. { Set-Location .. }
+function ... { Set-Location ../.. }
+function .... { Set-Location ../../.. }
+function ..... { Set-Location ../../../.. }
+function ...... { Set-Location ../../../../.. }
+function ....... { Set-Location ../../../../../.. }
+function ........ { Set-Location ../../../../../../.. }
+
+function la {
+  Get-ChildItem -Force
 }
 
 function l ($path, [switch]$a) {
@@ -92,8 +121,19 @@ function l ($path, [switch]$a) {
   | Format-Wide
 }
 
+function o ($path) {
+  Set-Location -Path $path
+}
 
-### `start-ish` utility
+function e ($path) {
+  o $path `
+    && l
+}
+
+Write-DebugTimestamped "Navigation toolkit prepared."
+
+
+### the `start-ish` utility
 
 function start-wt ($subCommand) {
   Write-Verbose "Launching Windows Terminal in current directory..."
@@ -116,24 +156,15 @@ function start-pwsh ($command) {
   start-wt "pwsh -NoExit $cmd"
 }
 
-
-### aliases for any cmdlet
-
-Set-Alias -Name exp `
-  -Value explorer
-
-Set-ALias -Name alias-for `
-  -Value Get-CmdletAlias
-
-function Get-CmdletAlias ($cmdletName) {
-  Get-Alias `
-  | Where-Object -FilterScript { $_.Definition -like "$cmdletName" } `
-  | Format-Table -Property Definition, Name -AutoSize
-}
+Write-DebugTimestamped "The 'start-ish' functions created."
 
 
 ####################################################################
 ### Tools: `git`
+
+Write-DebugTimestamped "Defining 'git' related commands..."
+
+Import-Module posh-git
 
 Set-Alias -Name g `
   -Value git
@@ -156,36 +187,51 @@ function gps { git ps }
 function gdt { git dt }
 function gmt { git mt }
 
-Import-Module posh-git
+Write-DebugTimestamped "Useful 'git' aliases created."
 
-#$GitPromptSettings.DefaultPromptAbbreviateHomeDirectory = $true
-#$GitPromptSettings.DefaultPromptBeforeSuffix.Text = "`n"
+
+####################################################################
+### Tools: `oh-my-posh`
+
+Write-DebugTimestamped "Preparing 'oh-my-posh' prompt theme..."
+
+Import-Module oh-my-posh
+Set-PoshPrompt -Theme "powerlevel10k_rainbow"
+
+Write-DebugTimestamped "Prompt with 'oh-my-posh' registered."
 
 
 ####################################################################
 ### Tools: `dotnet`
 
+Write-DebugTimestamped "Defining 'dotnet' related commands..."
+
 Set-Alias -Name dn `
   -Value dotnet
 
-function start-fsi () {
-  Write-Verbose "Starting F# Interactive (REPL) via .NET Core..."
-  Start-Process -FilePath dotnet -ArgumentList fsi
+function fsi {
+  Write-Verbose "Starting F# Interactive (REPL) via .NET..."
+  dotnet fsi $args
 }
 
 ### parameter completion shim for the dotnet CLI
-Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
+# https://docs.microsoft.com/en-us/dotnet/core/tools/enable-tab-autocomplete#powershell
+Register-ArgumentCompleter -Native -CommandName dotnet, dn -ScriptBlock {
   param ($commandName, $wordToComplete, $cursorPosition)
-  dotnet complete --position $cursorPosition "$wordToComplete" `
-  | ForEach-Object {
-    [System.Management.Automation.CompletionResult]::new($_, $_, "ParameterValue", $_)
+  dotnet complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
+    [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
   }
 }
+
+Write-DebugTimestamped "The 'dotnet' CLI arranged."
+
 
 ####################################################################
 ### Tools: `fake`
 # TODO:
 # * don't close window after fake-it
+
+Write-DebugTimestamped "Defining 'fake' related commands..."
 
 function __fake-it-can_here ($ScriptBlock) {
   $fakeFile = "build.fsx"
@@ -235,13 +281,7 @@ function fake-it-here ($target) {
   }
 }
 
+Write-DebugTimestamped "The 'fake' build-tool qualified."
+
 
 ####################################################################
-### Environment: final configuration
-
-### add a customized PowerShell prompt
-# function Prompt {
-#   $env:COMPUTERNAME + "\" + (Get-Location) + "> "
-# }
-
-$VerbosePreference = "Continue"
