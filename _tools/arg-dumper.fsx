@@ -1,8 +1,11 @@
-﻿open System
+// Execute it like:
+// dotnet fsi arg-dumper.fsx pass your args here
+
+open System
 
 let author = "Dominik Janiec"
-let year = "2017"
-let version = new System.Version(0, 1)
+let year = "12021"
+let version = Version(1, 0)
 
 
 type ArgStats =
@@ -20,10 +23,10 @@ type ArgData =
 let headerLines argv =
     [ ""
     ; sprintf "ArgDumper - %s (%s v. %A)" author year version
-    ; String.replicate 64 "="
+    ; String.replicate 69 "="
     ; ""
-    ; sprintf "Executed with %d arguments from a path:" <| Array.length argv
-    ; sprintf "$ %s" <| Environment.CurrentDirectory
+    ; sprintf "Executed with %d arguments from a path: '%s'"
+        <|| (Array.length argv, Environment.CurrentDirectory)
     ]
 
 let makeLine stats data =
@@ -47,7 +50,7 @@ let makeLine stats data =
             |> toStringPadded data.length
 
     sprintf
-        "  %s. [%s|%d] -> %s"
+        "   %s. [%s|%d] -> '%s'"
         countPart
         lenghtPart
         stats.maxLength
@@ -89,11 +92,10 @@ let withLastEmptyLine lines =
         | _ -> lines @ [ "" ]
 
 
-[<EntryPoint>]
-let main argv =
-    headerLines argv @ bodyLines argv
-        |> withLastEmptyLine
-        |> String.concat Environment.NewLine
-        |> printf "%s"
+let argv = fsi.CommandLineArgs
+headerLines argv @ bodyLines argv
+    |> withLastEmptyLine
+    |> String.concat Environment.NewLine
+    |> printf "%s"
 
-    0
+Environment.Exit 0
