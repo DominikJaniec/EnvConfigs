@@ -193,3 +193,13 @@ function SetAttributesOf ($path, [System.IO.FileAttributes]$attributes) {
     $value = $item.Attributes
     $item.Attributes = $value -bOR $attributes
 }
+
+function RestartProcess ($processPath) {
+    EnsurePathExists $processPath -AsFile
+
+    Get-Process `
+    | Where-Object { $_.Path -eq $processPath } `
+    | ForEach-Object { Stop-Process -Id $_.Id }
+
+    Start-Process -FilePath $processPath
+}

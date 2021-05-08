@@ -1,22 +1,25 @@
 param(
     [switch]$AssocTxtfile,
-    [switch]$CleanUpCtxMenu,
+    [switch]$CtxMenuCleanUp,
     [switch]$PrepareExplorer,
-    [switch]$InstallUpdateScript
+    [switch]$DittoConfigSetup,
+    [switch]$UpdateScriptInstall
 )
 
 . ".\common.ps1"
 
 
 $ProfilePath_Repos = Join-Path $Env:USERPROFILE "Repos"
-$ExpectedPath_KnownPATH = Join-Path $Env:ChocolateyInstall "bin"
 $ExpectedPath_ProcessExplorer = Join-Path $Env:ChocolateyInstall "lib\procexp\tools\procexp.exe"
+$ExpectedPath_Ditto = Join-Path $Env:ProgramFiles "Ditto\Ditto.exe"
+$ExpectedPath_KnownPATH = Join-Path $Env:ChocolateyInstall "bin"
 
 function ShouldExecuteEverything {
     $any = $AssocTxtfile.IsPresent `
-        -or $CleanUpCtxMenu.IsPresent `
+        -or $CtxMenuCleanUp.IsPresent `
         -or $PrepareExplorer.IsPresent `
-        -or $InstallUpdateScript.IsPresent
+        -or $DittoConfigSetup.IsPresent `
+        -or $UpdateScriptInstall.IsPresent
 
     return -not $any
 }
@@ -149,7 +152,27 @@ function EmbellishRepos () {
     Write-Output ">> 'Repos' folder's appearance changed."
 }
 
-function SetupUpdateScript {
+function DittoConfigSetup {
+    LogLines -Bar "Configuring Ditto - the clipboard manager..."
+    if (CouldNotFindForConfig "Ditto" $ExpectedPath_Ditto) {
+        return
+    }
+
+    LogLines -lvl 2 "Importing configuration into Register:"
+    $configPath = Join-Path $PSScriptRoot "ditto-configuration.reg"
+    REG IMPORT $configPath
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not import Ditto's configuration into Register."
+    }
+
+    LogLines -lvl 2 "Restarting Ditto..."
+    RestartProcess $ExpectedPath_Ditto
+
+    LogLines "Ditto configured successfully."
+}
+
+function UpdateScriptInstall {
     $updateScript = "update-system.bat"
     LogLines -Bar "Installing '$updateScript' script within PATH known directory..."
     MakeSymLinksAt $ExpectedPath_KnownPATH $PSScriptRoot $updateScript
@@ -165,7 +188,7 @@ if ($all -or $AssocTxtfile.IsPresent) {
     SetTextFilesExtensions
 }
 
-if ($all -or $CleanUpCtxMenu.IsPresent) {
+if ($all -or $CtxMenuCleanUp.IsPresent) {
     InitRegistryDriveHKCR
     CleanupContextMenuItems
 }
@@ -176,8 +199,12 @@ if ($all -or $PrepareExplorer.IsPresent) {
     EmbellishRepos
 }
 
-if ($all -or $InstallUpdateScript.IsPresent) {
-    SetupUpdateScript
+if ($all -or $DittoConfigSetup.IsPresent) {
+    DittoConfigSetup
+}
+
+if ($all -or $UpdateScriptInstall.IsPresent) {
+    UpdateScriptInstall
 }
 
 Write-Output "`n>> System preparation: Done."
