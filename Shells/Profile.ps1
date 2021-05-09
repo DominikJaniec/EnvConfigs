@@ -26,9 +26,12 @@ function dump ($obj, $name = "Given object") {
   }
 }
 
-function Write-DebugTimestamped ($Message) {
+function Write-DebugTimestamped ($MessageLines) {
   $timestamp = Get-Date -Format yyyyMMdd-HH:mm:ss.fff
-  Write-Debug "$timestamp| $Message"
+  $lines = @() + $MessageLines
+  Write-Debug "$timestamp| $($lines[0])"
+  $lines | Select-Object -Skip 1 `
+  | ForEach-Object { Write-Debug "`t$_" }
 }
 
 Write-DebugTimestamped "Helpers for Profile.ps1 registered."
@@ -164,8 +167,6 @@ Write-DebugTimestamped "The 'start-ish' functions created."
 
 Write-DebugTimestamped "Defining 'git' related commands..."
 
-Import-Module posh-git
-
 Set-Alias -Name g `
   -Value git
 
@@ -187,18 +188,51 @@ function gps { git ps }
 function gdt { git dt }
 function gmt { git mt }
 
-Write-DebugTimestamped "Useful 'git' aliases created."
+### Setup 'posh-git' module
+
+Write-DebugTimestamped "Importing and configuring the 'posh-git' module..."
+
+Import-Module posh-git
+
+function global:__GitPosh_PromptErrorInfo() {
+  if ($global:GitPromptValues.DollarQuestion) {
+    # green ok block:
+    return "`e[32m#`e[0m"
+  }
+
+  $err = "!"
+  if ($global:GitPromptValues.LastExitCode -ne 0) {
+    $err += " e:" + $global:GitPromptValues.LastExitCode
+  }
+
+  # red error code block:
+  return "`e[31m$err`e[0m"
+}
+
+# It is a template and we don't want string-substitution.
+# Thus, there should be that single-quoted string:
+$GitPromptSettings.DefaultPromptBeforeSuffix.Text `
+  = '`n$([DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss"))' `
+  + ' $(__GitPosh_PromptErrorInfo)'
+
+Write-DebugTimestamped "Aliases and Prompt for 'git' created."
 
 
 ####################################################################
 ### Tools: `oh-my-posh`
 
-Write-DebugTimestamped "Preparing 'oh-my-posh' prompt theme..."
+Write-DebugTimestamped "Preparing 'oh-my-posh' with prompt theme..."
 
-Import-Module oh-my-posh
-Set-PoshPrompt -Theme "powerlevel10k_rainbow"
+if ($null -ne $env:WT_PROFILE_ID) {
+  Import-Module oh-my-posh
+  Set-PoshPrompt -Theme "powerlevel10k_rainbow"
 
-Write-DebugTimestamped "Prompt with 'oh-my-posh' registered."
+  Write-DebugTimestamped "Prompt with 'oh-my-posh' module loaded."
+}
+else {
+  Write-DebugTimestamped "The 'oh-my-posh' prompt setup skipped", `
+    " - not within Windows Terminal, only ASCII support expected."
+}
 
 
 ####################################################################
