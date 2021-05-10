@@ -37,24 +37,27 @@
 
 [alias]
     st = status
-    lo = !git looog -9
+    lo = log --oneline --first-parent -9
     br = branch
     sw = switch
-    df = diff
+    df = diff --word-diff
     co = checkout
     rs = reset
-    ad = add -A
-    cm = commit -m
+    ad = add --all
+    cm = commit --message
     rc = !git recommit-do-it
     cp = cherry-pick
     ft = fetch
     mg = merge
     pl = pull
     ps = push
-    dt = difftool -t vscode
-    mt = mergetool -t vscode
 
-    looog = log --oneline --graph
+    dft = difftool --tool vscode
+    mgt = mergetool --tool vscode
+    dftw = difftool --tool winmerge
+    mgtw = mergetool --tool winmerge
+
+    loog = log --oneline --graph
     visualise = !start gitk --all
     branches = branch --format=%(refname:short) --list
     details = show --format=fuller --show-signature --summary --stat --stat-width=140 --stat-graph-width=20
@@ -82,21 +85,12 @@
     set-sign-on = !git config --local commit.gpgSign true
     set-sign-off = !git config --local commit.gpgSign false
     set-user-private = !git config --local user.email dominikjaniec@gmail.com && git config --local user.name \"Dominik Janiec\"
-    set-user-work = !git config --local user.email dominik.janiec@medius-group.pl && git config --local user.name \"Dominik Janiec\"
-    set-tool-codecompare = !git config --local diff.tool codecompare && git config --local merge.tool codecompare
-    set-tool-meld = !git config --local diff.tool codecompare && git config --local merge.tool meld
+    set-user-work = !git config --local user.email dominik.janiec@medius.com && git config --local user.name \"Dominik Janiec\"
     set-tool-vim = !git config --local diff.tool vim && git config --local merge.tool vim
+    set-tool-winmerge = !git config --local diff.tool winmerge && git config --local merge.tool winmerge
     set-tool-visualstudio = !git config --local diff.tool visualstudio && git config --local merge.tool visualstudio
     set-tool-vscode = !git config --local diff.tool vscode && git config --local merge.tool vscode
 
-
-[difftool "codecompare"]
-    cmd = \"C:\\Program Files\\Devart\\Code Compare\\codecompare.exe\" \"$LOCAL\" \"$REMOTE\"
-[mergetool "codecompare"]
-    cmd = \"C:\\Program Files\\Devart\\Code Compare\\codemerge.exe\" -MF=\"$LOCAL\" -TF=\"$REMOTE\" -BF=\"$BASE\" -RF=\"$MERGED\"
-
-[mergetool "meld"]
-    cmd = \"C:\\Program Files (x86)\\Meld\\Meld.exe\" \"$LOCAL\" \"$BASE\" \"$REMOTE\" --output=\"$MERGED\"
 
 [difftool "visualstudio"]
     cmd = \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer\\vsDiffMerge.exe\" \"$LOCAL\" \"$REMOTE\" Source Target /ignorespace /t
