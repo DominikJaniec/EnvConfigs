@@ -1,8 +1,10 @@
 param(
     [switch]$AssocTxtfile,
     [switch]$CtxMenuCleanUp,
+    [switch]$ProcessExpSchedule,
     [switch]$PrepareExplorer,
     [switch]$DittoConfigSetup,
+    [switch]$FluxConfigSetup,
     [switch]$UpdateScriptInstall
 )
 
@@ -10,15 +12,15 @@ param(
 
 
 $ProfilePath_Repos = Join-Path $Env:USERPROFILE "Repos"
-$ExpectedPath_ProcessExplorer = Join-Path $Env:ChocolateyInstall "lib\procexp\tools\procexp.exe"
-$ExpectedPath_Ditto = Join-Path $Env:ProgramFiles "Ditto\Ditto.exe"
 $ExpectedPath_KnownPATH = Join-Path $Env:ChocolateyInstall "bin"
 
 function ShouldExecuteEverything {
     $any = $AssocTxtfile.IsPresent `
         -or $CtxMenuCleanUp.IsPresent `
+        -or $ProcessExpSchedule.IsPresent `
         -or $PrepareExplorer.IsPresent `
         -or $DittoConfigSetup.IsPresent `
+        -or $FluxConfigSetup.IsPresent `
         -or $UpdateScriptInstall.IsPresent
 
     return -not $any
@@ -81,9 +83,10 @@ function CleanupContextMenuItems () {
     Write-Output ">> Windows Explorer's context menu for folders cleaned up."
 }
 
-function ScheduleProcessExplorer () {
+function ProcessExpSchedule () {
+    $processExplorerExpectedPath = Join-Path $Env:ChocolateyInstall "lib\procexp\tools\procexp.exe"
     Write-Output "`n>> Scheduling autostart of Process Explorer on user logon."
-    if (CouldNotFindForConfig "Process Explorer" $ExpectedPath_ProcessExplorer) {
+    if (CouldNotFindForConfig "Process Explorer" $processExplorerExpectedPath) {
         return
     }
 
@@ -93,7 +96,7 @@ function ScheduleProcessExplorer () {
 
     if ($LASTEXITCODE -ne 0) {
         Write-Output ">> Scheduling new task: '$scheduleName'"
-        cmd.exe /C "schtasks /Create /SC ONLOGON /TN `"$scheduleName`" /TR `"$ExpectedPath_ProcessExplorer /t`""
+        cmd.exe /C "schtasks /Create /SC ONLOGON /TN `"$scheduleName`" /TR `"$processExplorerExpectedPath /t`""
     }
 
     Write-Output ">> Process Explorer scheduled to autostart on logon."
@@ -153,13 +156,14 @@ function EmbellishRepos () {
 }
 
 function DittoConfigSetup {
+    $dittoExpectedPath = Join-Path $Env:ProgramFiles "Ditto\Ditto.exe"
     LogLines -Bar "Configuring Ditto - the clipboard manager..."
-    if (CouldNotFindForConfig "Ditto" $ExpectedPath_Ditto) {
+    if (CouldNotFindForConfig "Ditto" $dittoExpectedPath) {
         return
     }
 
     LogLines -lvl 2 "Importing configuration into Register:"
-    $configPath = Join-Path $PSScriptRoot "ditto-configuration.reg"
+    $configPath = Join-Path $PSScriptRoot "Ditto-configuration.reg"
     REG IMPORT $configPath
 
     if ($LASTEXITCODE -ne 0) {
@@ -167,9 +171,30 @@ function DittoConfigSetup {
     }
 
     LogLines -lvl 2 "Restarting Ditto..."
-    RestartProcess $ExpectedPath_Ditto
+    RestartProcess $dittoExpectedPath
 
     LogLines "Ditto configured successfully."
+}
+
+function FluxConfigSetup {
+    $fluxExpectedPath = Join-Path $Env:LOCALAPPDATA "FluxSoftware\Flux\flux.exe"
+    LogLines -Bar "Configuring f.lux - reduce your eyestrain..."
+    if (CouldNotFindForConfig "f.lux" $fluxExpectedPath) {
+        return
+    }
+
+    LogLines -lvl 2 "Importing configuration into Register:"
+    $configPath = Join-Path $PSScriptRoot "f.lux-configuration.reg"
+    REG IMPORT $configPath
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not import f.lux's configuration into Register."
+    }
+
+    LogLines -lvl 2 "Restarting f.lux..."
+    RestartProcess $fluxExpectedPath
+
+    LogLines "f.lux configured successfully."
 }
 
 function UpdateScriptInstall {
@@ -193,14 +218,21 @@ if ($all -or $CtxMenuCleanUp.IsPresent) {
     CleanupContextMenuItems
 }
 
+if ($all -or $ProcessExpSchedule.IsPresent) {
+    ProcessExpSchedule
+}
+
 if ($all -or $PrepareExplorer.IsPresent) {
-    ScheduleProcessExplorer
     SetupWindowsExplorer
     EmbellishRepos
 }
 
 if ($all -or $DittoConfigSetup.IsPresent) {
     DittoConfigSetup
+}
+
+if ($all -or $FluxConfigSetup.IsPresent) {
+    FluxConfigSetup
 }
 
 if ($all -or $UpdateScriptInstall.IsPresent) {
