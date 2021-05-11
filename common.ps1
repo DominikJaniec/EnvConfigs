@@ -194,12 +194,33 @@ function SetAttributesOf ($path, [System.IO.FileAttributes]$attributes) {
     $item.Attributes = $value -bOR $attributes
 }
 
-function RestartProcess ($processPath) {
+function ImportIntoRegister ($what, $regDir, $regFile) {
+    LogLines -lvl 2 "Importing $what into Windows Register:"
+    $regPath = Join-Path $regDir $regFile
+    REG IMPORT $regPath
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not reg-import $what."
+    }
+}
+
+function ConfigUnderRestartedProcess ($what, $description, $processPath, $configurationBlock) {
+    LogLines -Bar "Configuring $what`: $description..."
+    if (CouldNotFindForConfig $what $processPath) {
+        return
+    }
+
     EnsurePathExists $processPath -AsFile
+    LogLines -lvl 2 "Killing process: $processPath"
 
     Get-Process `
     | Where-Object { $_.Path -eq $processPath } `
     | ForEach-Object { Stop-Process -Id $_.Id }
 
+    Invoke-Command -ScriptBlock $configurationBlock
+
+    LogLines -lvl 2 "Starting $what process..."
     Start-Process -FilePath $processPath
+
+    LogLines "$what configured successfully."
 }

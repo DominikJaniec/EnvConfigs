@@ -43,13 +43,16 @@ My personal environment's configuration
 
 1. Execute prepare script: [`> .\System\!prepare.ps1`](System/!prepare.ps1)
    * Script has a few switches. When any of then is present, only related changes will be executed. Script by default executes all of them.
-   * Available switches: `-AssocTxtfile`, `-CtxMenuCleanUp`, `-PrepareExplorer`, `-DittoConfigSetup`, `-UpdateScriptInstall`.
+   * Available switches: `-AssocTxtfile`, `-CtxMenuCleanUp`, `-ProcessExpSchedule`, `-PrepareExplorer`, `-DittoConfigSetup`, `-FluxConfigSetup`, `-HWiNFO64ConfigSetup`, `-UpdateScriptInstall`.
 2. That script have to be executed from `PSSession` elevated to _Admin_ from target user.
 3. What does that script do?
    * `-AssocTxtfile`: Will setup every [defined files' extensions](System/txtfile_extensions.txt) to be treated as Text-Based files by _Windows Explorer_.
    * `-CtxMenuCleanUp`: Will clean up context menu of folders from unnecessary [defined entries](System/unwanted_cmds.txt).
-   * `-PrepareExplorer`: Will schedule [_Process Explorer_](https://chocolatey.org/packages/procexp) by _Mark Russinovich_ to start on _Logon_ of any user. Will fix _Explorer's_ configuration and setup [_Quick Access_](https://support.microsoft.com/en-us/help/4027032/windows-pin-remove-and-customize-in-quick-access) with a few handy folders. It will also embellish current user's directory `~/Repos` with appropriate [icon](System/template_Repos/GitDirectory.png) for _Git_.
+   * `-ProcessExpSchedule`: Will schedule [_Process Explorer_](https://chocolatey.org/packages/procexp) by _Mark Russinovich_ to start on _Logon_ of any user.
+   * `-PrepareExplorer`: Will fix _Explorer's_ configuration and setup [_Quick Access_](https://support.microsoft.com/en-us/help/4027032/windows-pin-remove-and-customize-in-quick-access) with a few handy folders. It will also embellish current user's directory `~/Repos` with appropriate [icon](System/template_Repos/GitDirectory.png) for _Git_.
    * `-DittoConfigSetup`: Will load into Register non-default Ditto's configuration defined within [`ditto-configuration.reg`](System/ditto-configuration.reg) file.
+   * `-FluxConfigSetup`: Will import Register-based f.lux's configuration adjusted for Domin's lifestyle.
+   * `-HWiNFO64ConfigSetup`: Will configure HWiNFO64 to sense CPU and GPU temperatures of private laptop.
    * `-UpdateScriptInstall`: Will link [`update-system.bat`](System/update-system.bat) into `PATH` available directory, so _Admin_ can request and execute whole _System_ update.
 
 ## Visual Studio Code

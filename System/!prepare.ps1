@@ -5,6 +5,7 @@ param(
     [switch]$PrepareExplorer,
     [switch]$DittoConfigSetup,
     [switch]$FluxConfigSetup,
+    [switch]$HWiNFO64ConfigSetup,
     [switch]$UpdateScriptInstall
 )
 
@@ -21,6 +22,7 @@ function ShouldExecuteEverything {
         -or $PrepareExplorer.IsPresent `
         -or $DittoConfigSetup.IsPresent `
         -or $FluxConfigSetup.IsPresent `
+        -or $HWiNFO64ConfigSetup.IsPresent `
         -or $UpdateScriptInstall.IsPresent
 
     return -not $any
@@ -155,48 +157,6 @@ function EmbellishRepos () {
     Write-Output ">> 'Repos' folder's appearance changed."
 }
 
-function DittoConfigSetup {
-    $dittoExpectedPath = Join-Path $Env:ProgramFiles "Ditto\Ditto.exe"
-    LogLines -Bar "Configuring Ditto - the clipboard manager..."
-    if (CouldNotFindForConfig "Ditto" $dittoExpectedPath) {
-        return
-    }
-
-    LogLines -lvl 2 "Importing configuration into Register:"
-    $configPath = Join-Path $PSScriptRoot "Ditto-configuration.reg"
-    REG IMPORT $configPath
-
-    if ($LASTEXITCODE -ne 0) {
-        throw "Could not import Ditto's configuration into Register."
-    }
-
-    LogLines -lvl 2 "Restarting Ditto..."
-    RestartProcess $dittoExpectedPath
-
-    LogLines "Ditto configured successfully."
-}
-
-function FluxConfigSetup {
-    $fluxExpectedPath = Join-Path $Env:LOCALAPPDATA "FluxSoftware\Flux\flux.exe"
-    LogLines -Bar "Configuring f.lux - reduce your eyestrain..."
-    if (CouldNotFindForConfig "f.lux" $fluxExpectedPath) {
-        return
-    }
-
-    LogLines -lvl 2 "Importing configuration into Register:"
-    $configPath = Join-Path $PSScriptRoot "f.lux-configuration.reg"
-    REG IMPORT $configPath
-
-    if ($LASTEXITCODE -ne 0) {
-        throw "Could not import f.lux's configuration into Register."
-    }
-
-    LogLines -lvl 2 "Restarting f.lux..."
-    RestartProcess $fluxExpectedPath
-
-    LogLines "f.lux configured successfully."
-}
-
 function UpdateScriptInstall {
     $updateScript = "update-system.bat"
     LogLines -Bar "Installing '$updateScript' script within PATH known directory..."
@@ -228,11 +188,31 @@ if ($all -or $PrepareExplorer.IsPresent) {
 }
 
 if ($all -or $DittoConfigSetup.IsPresent) {
-    DittoConfigSetup
+    ConfigUnderRestartedProcess "Ditto" "the clipboard manager" `
+    (Join-Path $Env:ProgramFiles "Ditto\Ditto.exe") {
+        ImportIntoRegister "Ditto's config" $PSScriptRoot `
+            "Ditto-configuration.reg"
+    }
 }
 
 if ($all -or $FluxConfigSetup.IsPresent) {
-    FluxConfigSetup
+    ConfigUnderRestartedProcess "f.lux" "let's reduce eyestrain" `
+    (Join-Path $Env:LOCALAPPDATA "FluxSoftware\Flux\flux.exe") {
+        ImportIntoRegister "f.lux's setup" $PSScriptRoot `
+            "f.lux-configuration.reg"
+    }
+}
+
+if ($all -or $HWiNFO64ConfigSetup.IsPresent) {
+    $hwinfoDirectory = Join-Path $Env:ProgramFiles "HWiNFO64"
+    ConfigUnderRestartedProcess "HWiNFO64" "sense HW sensors" `
+    (Join-Path $hwinfoDirectory "HWiNFO64.EXE") {
+        ImportIntoRegister "HWiNFO64" $PSScriptRoot `
+            "HWiNFO64-sensors.reg"
+
+        MakeSymLinksAt $hwinfoDirectory `
+            $PSScriptRoot "HWiNFO64.INI"
+    }
 }
 
 if ($all -or $UpdateScriptInstall.IsPresent) {
