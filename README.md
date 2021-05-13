@@ -31,13 +31,14 @@ My personal environment's configuration
 ## Shells & Git configuration
 
 1. Execute prepare script: [`> .\Shells\!prepare.ps1`](Shells/!prepare.ps1)
-   * Script does not have any parameters.
+   * Script provides a single switch: `-PwshAllUsers`.
 2. That script have to be executed from `PSSession` elevated to _Admin_ from target user.
    * This requirement could be lifted, when creating `SymbolicLink` will be available to normal users.
 3. What does that script do?
    * Will make symbolic-links at _Home_ (`~/`) directory of current user with Bash and Git configuration files: [`.bash_profile`](Shells/.bash_profile) + [`.bashrc`](Shells/.bashrc), and [`.gitconfig`](Shells/.gitconfig).
    * Will install pwsh-modules: [`posh-git`](https://www.powershellgallery.com/packages/posh-git) and [`oh-my-posh`](https://www.powershellgallery.com/packages/oh-my-posh), which are utilized by `Profile.ps1` for more user friendly UX of terminal.
    * Symbolic-link will also be created for profile-file for PowerShell at [`~/Documents/PowerShell/Profile.ps1`](Shells/Profile.ps1) - no profile for old but yet default PowerShell 5.
+   * When `-PwshAllUsers` is provided, the Pwsh is set up with Profile and Modules for [All Users](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_profiles) under `C:/Program Files/PowerShell`.
 
 ## Windows configuration
 

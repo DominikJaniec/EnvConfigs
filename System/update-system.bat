@@ -43,10 +43,10 @@ IF %ERRORLEVEL% NEQ 0 (
 ECHO.
 ECHO #####################################################################
 ECHO ### ^>^> Executing pwsh Modules update:
-ECHO ### ^>^> pwsh "Update-Module -Verbose"
+ECHO ### ^>^> pwsh "Update-Module -Scope AllUsers -Verbose"
 
 @REM Based on Shells/!prepare.ps1
-pwsh -NoProfile -Command "Update-Module -Verbose -ErrorAction Stop"
+pwsh -NoProfile -Command "Update-Module -Scope AllUsers -Verbose -ErrorAction Stop"
 IF %ERRORLEVEL% NEQ 0 (
     GOTO problems
 )
