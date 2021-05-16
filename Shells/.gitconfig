@@ -61,7 +61,6 @@
     visualise = !start gitk --all
     branches = branch --format=%(refname:short) --list
     details = show --format=fuller --show-signature --summary --stat --stat-width=140 --stat-graph-width=20
-    fire-fire = !sh ~/Repos/git-fire/git-fire
     ignore-for = !sh -c 'curl --output .gitignore --fail \"https://raw.githubusercontent.com/github/gitignore/master/$0.gitignore\"'
     ignore-for-visualstudio = !git ignore-for VisualStudio
     recommit = commit --amend --reset-author
@@ -70,7 +69,8 @@
     save = !sh -c 'git save-as \"Temporary commit on $(date \"+%Y-%m-%d %H:%M\")\"'
     hidden = !git ls-files -t | grep \"^S \" | cut --delimiter=\" \" --fields=2- --only-delimited
     hid-give = update-index --skip-worktree
-    hid-recall = update-index --no-skip-worktree
+    hid-revoke = update-index --no-skip-worktree
+    hid-recall = !git hidden | xargs --delimiter=\"\\n\" --no-run-if-empty git hid-revoke
     asided = !git branches _aside/*
     aside-under = !sh -c 'git co -b \"_aside/$0\" >> /dev/null && echo \"Put aside under: _aside/$0 as commits:\" && git save-as \"$0\" && git co -'
     aside = !sh -c 'git aside-under \"$(date +%Y-%m-%d_%H-%M)\"'
@@ -84,18 +84,17 @@
 
     set-sign-on = !git config --local commit.gpgSign true
     set-sign-off = !git config --local commit.gpgSign false
-    set-user-private = !git config --local user.email dominikjaniec@gmail.com && git config --local user.name \"Dominik Janiec\"
-    set-user-work = !git config --local user.email dominik.janiec@medius.com && git config --local user.name \"Dominik Janiec\"
     set-tool-vim = !git config --local diff.tool vim && git config --local merge.tool vim
     set-tool-winmerge = !git config --local diff.tool winmerge && git config --local merge.tool winmerge
     set-tool-visualstudio = !git config --local diff.tool visualstudio && git config --local merge.tool visualstudio
     set-tool-vscode = !git config --local diff.tool vscode && git config --local merge.tool vscode
+    set-user-private = !git config --local user.email dominikjaniec@gmail.com && git config --local user.name \"Dominik Janiec\"
 
 
 [difftool "visualstudio"]
-    cmd = \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer\\vsDiffMerge.exe\" \"$LOCAL\" \"$REMOTE\" Source Target /ignorespace /t
+    cmd = \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer\\vsDiffMerge.exe\" \"$LOCAL\" \"$REMOTE\" Source Target /ignorespace /t
 [mergetool "visualstudio"]
-    cmd = \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer\\vsDiffMerge.exe\" \"$LOCAL\" \"$REMOTE\" \"$BASE\" \"$MERGED\" /ignorespace /m /t
+    cmd = \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer\\vsDiffMerge.exe\" \"$LOCAL\" \"$REMOTE\" \"$BASE\" \"$MERGED\" /ignorespace /m /t
 
 [difftool "vscode"]
     cmd = code --wait --diff \"$LOCAL\" \"$REMOTE\"
