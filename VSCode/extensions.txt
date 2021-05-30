@@ -1,7 +1,7 @@
 ###################################################################
 # This file contains List of Extensions' names for VS Code.
 #
-# Each lines defines group (must|tools|coding|haskell|extra),
+# Each lines defines group (core|tools|dev|webdev|work|extra),
 #     and then after pipe (character '|') is defined identifier
 #     which will be provided as parameter for install command:
 #     `code --install-extension <extension-identifier>`.
@@ -9,33 +9,74 @@
 # Empty lines or beginning with '#' are ignored.
 #
 
-must|vscodevim.vim
-must|eamodio.gitlens
-must|ryu1kn.partial-diff
-must|ms-vscode.vs-keybindings
+
+core|vscodevim.vim
+core|eamodio.gitlens
+core|humao.rest-client
+core|ryu1kn.partial-diff
+core|alexcvzz.vscode-sqlite
+core|mechatroner.rainbow-csv
+core|ms-vsliveshare.vsliveshare
+core|ms-vscode-remote.remote-ssh
+
 
 tools|streetsidesoftware.code-spell-checker
 tools|streetsidesoftware.code-spell-checker-polish
 tools|yzhang.markdown-all-in-one
-tools|DavidAnson.vscode-markdownlint
+tools|davidanson.vscode-markdownlint
+tools|adam-watters.vscode-color-pick
 tools|aaron-bond.better-comments
-tools|mechatroner.rainbow-csv
-tools|humao.rest-client
+tools|editorconfig.editorconfig
+tools|ymotongpoo.licenser
+tools|heaths.vscode-guid
+tools|ms-vscode.hexeditor
+tools|ms-vscode-remote.remote-wsl
+tools|redhat.vscode-yaml
+tools|redhat.vscode-xml
 
-coding|Ionide.Ionide-fsharp
-coding|sbrink.elm
-coding|ms-vscode.csharp
-coding|ms-vscode.PowerShell
-coding|ecmel.vscode-html-css
-coding|michelemelluso.code-beautifier
-coding|redhat.vscode-yaml
-coding|DotJoshJohnson.xml
 
-haskell|Vans.haskero
-haskell|jcanero.hoogle-vscode
-haskell|hoovercj.haskell-linter
-haskell|justusadam.language-haskell
+dev|ionide.ionide-fsharp
+dev|ionide.ionide-paket
+dev|ionide.ionide-fake
+dev|danmannock.vscode-fsharp-refactor
+dev|ms-dotnettools.csharp
+dev|ms-vscode.powershell
+dev|icsharpcode.ilspy-vscode
+dev|alexkrechik.cucumberautocomplete
+dev|hbenl.vscode-test-explorer
+dev|wghats.vscode-nxunit-test-adapter
+dev|formulahendry.dotnet-test-explorer
+dev|aliasadidev.nugetpackagemanagergui
+dev|ms-dotnettools.dotnet-interactive-vscode
+dev|andriniaina.fsharp-interactive-datascience
 
-extra|ms-vsliveshare.vsliveshare
-extra|PeterJausovec.vscode-docker
+
+webdev|visualstudioexptteam.vscodeintellicode
+webdev|firefox-devtools.vscode-firefox-debug
+webdev|msjsdiag.debugger-for-chrome
+webdev|elmtooling.elm-ls-vscode
+webdev|dbaeumer.vscode-eslint
+webdev|nicoespeon.abracadabra
+webdev|esbenp.prettier-vscode
+webdev|zignd.html-css-class-completion
+webdev|pranaygp.vscode-css-peek
+webdev|michelemelluso.code-beautifier
+webdev|christian-kohler.path-intellisense
+
+
+work|ms-mssql.mssql
+work|medius.runonsave
+work|Davidsekar.redis-xplorer
+work|ms-vscode.azure-account
+work|ms-azuretools.vscode-azurestorage
+work|marcinkowal2015.module-name-helper
+
+
+extra|pnp.polacode
+extra|haskell.haskell
+extra|vintharas.learn-vim
+extra|james-yu.latex-workshop
+extra|joaompinto.vscode-graphviz
+extra|ms-azuretools.vscode-docker
+extra|ms-vscode-remote.remote-containers
 extra|ms-kubernetes-tools.vscode-kubernetes-tools

@@ -59,12 +59,13 @@ My personal environment's configuration
 ## Visual Studio Code
 
 1. Execute prepare script: [`> .\VSCode\!prepare.ps1`](VSCode/!prepare.ps1)
-   * Optional switch: `-LinkBack`: hard-links configuration files back into this repository.
-   * Optional multi-value parameter: `-Extensions`: defines which _extensions groups_ will be installed. Available values: `(all|must|tools|coding|haskell|extra)` where `all` matches to every extension. Multiple values are separated by comma.
+   * Optional multi-value parameter: `-Extensions`: defines which _extensions groups_ will be installed. Available values: `core`, `tools`, `dev`, `webdev`, `work`, `extra` - where `all` matches to every extension and multiple values are separated by comma.
+   * There are two additional _switches_: `SkipExtra` and `SkipWork`, which excludes matched group even explicitly requested.
+   * By default `-Extensions` assumes `all` group, for ease of use.
 2. That script requires installed _VS Code_, which could be download from [Microsoft](https://code.visualstudio.com/docs/?dv=win).
 3. What does that script do?
-   * Will install every [defined extensions](VSCode/extensions.txt) for _VS Code_ according to selected _extensions group_.
-   * Will hard-link configuration files ([`settings.json`](VSCode/settings.json), [`keybindings.json`](VSCode/keybindings.json)).
+   * Will link configuration files ([`settings.json`](VSCode/settings.json), [`keybindings.json`](VSCode/keybindings.json)) at User Code's profile directory.
+   * Will install every [defined extensions](VSCode/extensions.txt) for _VS Code_ according to selected _extensions-group_.
 
 ## Visual Studio 2017
 

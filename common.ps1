@@ -4,11 +4,15 @@ $PSDefaultParameterValues["*:ErrorAction"] = "Stop"
 
 
 function LogLines ($lines, $lvl = 1, [switch]$Bar) {
-    $barLine = New-Object `
-        -TypeName "System.String" `
-        -ArgumentList @('#', 69)
+    if ($lvl -lt 1) {
+        throw "Log indentation level must be greater than 0."
+    }
 
     if ($Bar.IsPresent) {
+        $barLine = New-Object `
+            -TypeName "System.String" `
+            -ArgumentList @('#', 69)
+
         Write-Output "`n$barLine"
     }
 
@@ -22,10 +26,19 @@ function LogLines ($lines, $lvl = 1, [switch]$Bar) {
     }
 }
 
+function LogLines2 ($lines, [switch]$Bar) {
+    LogLines $lines -lvl 2 -Bar:$Bar.IsPresent
+}
+
+function LogLines3 ($lines, [switch]$Bar) {
+    LogLines $lines -lvl 3 -Bar:$Bar.IsPresent
+}
+
 function CouldNotFindForConfig ($what, $path) {
     $notFound = -not (Test-Path $path)
     if ($notFound) {
-        Write-Output ">> Could not find '$what' at: '$path', configuration skipped."
+        Write-Output ">> Could not find '$what' at: '$path'" `
+            + ", configuration will be skipped."
     }
 
     return $notFound
@@ -59,7 +72,7 @@ function LoadLinesFrom ($sourceDir, $sourceFile) {
     EnsurePathExists $sourceFilePath -AsFile
 
     return Get-Content $sourceFilePath -Force `
-    | ForEach-Object { $_.trim() } `
+    | ForEach-Object { "$_".Trim() } `
     | Where-Object { $_ -ne "" } `
     | Where-Object { -not $_.StartsWith("#") }
 }
@@ -67,11 +80,36 @@ function LoadLinesFrom ($sourceDir, $sourceFile) {
 function LoadMetaLinesFrom ($sourceDir, $sourceFile) {
     return LoadLinesFrom $sourceDir $sourceFile `
     | ForEach-Object {
-        $parts = $_.Split("|")
-        $props = [ordered]@{
-            Metadata = $parts[0];
-            Value    = $parts[1];
+        $line = "$_"
+        $idx = $line.IndexOf("|")
+        if ($idx -le 0) {
+            throw "Cannot parse encountered line as 'Meta-Line'" `
+                + ", unexpected '|' character position. Line:`n$line"
         }
+
+        $meta = $line.Substring(0, $idx)
+        $value = $line.Substring($idx + 1)
+        $props = [ordered]@{
+            Metadata = $meta;
+            Value    = $value
+        }
+
+        return New-Object PSObject -Property $props
+    }
+}
+
+function LoadMetaLinesGroupedFrom ($sourceDir, $sourceFile) {
+    LoadMetaLinesFrom $sourceDir $sourceFile `
+    | Group-Object -Property Metadata `
+    | ForEach-Object {
+        $values = $_.Group `
+        | ForEach-Object Value
+
+        $props = [ordered]@{
+            Metadata = $_.Name;
+            Values   = $values
+        }
+
         return New-Object PSObject -Property $props
     }
 }
@@ -138,34 +176,13 @@ function MakeSymLinksAt ($targetDir, $sourceDir, $files) {
         Write-Output "`t => '$(Resolve-Path $sourcePath)'"
     }
 
-    Write-Output "Making Symbolic-Links at '$targetDir' into '$sourceDir'..."
-    EnsurePathExists $targetDir
+    Write-Output "Making Symbolic-Links at '$targetDir'"
+    Write-Output "`t into directory '$sourceDir'..."
 
+    EnsurePathExists $targetDir
     (@() + $files) | ForEach-Object {
         SymLinkFile $_
     }
-}
-
-function MakeHardLinkTo ($targetDir, $sourceDir, $fileName, $backup = $true) {
-    $linkedPath = Join-Path $targetDir $fileName
-    $sourcePath = Join-Path $sourceDir $fileName
-    EnsurePathExists $sourcePath
-
-    if (Test-Path $linkedPath) {
-        if (-not $backup) {
-            Remove-Item -Path $linkedPath -Force
-            Write-Output "Existing file '$fileName' had been deleted, linked file will replace it."
-        }
-        elseif (AreSameFiles $linkedPath $sourcePath) {
-            Remove-Item -Path $linkedPath -Force
-            Write-Output "Same existing file '$fileName' will be replaced by hard link."
-        }
-        else {
-            RenameAsTimestampedBackup $linkedPath
-        }
-    }
-
-    cmd.exe /C mklink /H "$linkedPath" "$sourcePath"
 }
 
 function ReplaceWitBackupAt ($targetDir, $sourceDir, $fileName) {

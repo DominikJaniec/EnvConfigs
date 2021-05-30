@@ -1,92 +1,109 @@
 param(
-    [switch]$LinkBack,
-    [string]$Extensions = "all"
+    [string]$Extensions = "all",
+    [switch]$SkipExtra,
+    [switch]$SkipWork
 )
 
-$ExtensionsSeparator = ","
-$ExtensionsGroups = @("all", "must", "tools", "coding", "haskell", "extra")
-$VSCodeProfile = Join-Path $env:USERPROFILE "AppData\Roaming\Code\User"
 . ".\common.ps1"
 
-function EnsureVSCodeAvailable {
+$GrAll = "all"
+$GrWork = "work"
+$GrExtra = "extra"
+$ExtensionsGroups = @("core", "tools", "dev", "webdev", $GrWork, $GrExtra)
+$ValidExtensionsGroups = $ExtensionsGroups + $GrAll
+$GroupsSeparator = ","
+
+$VSCodeProfile = Join-Path $env:APPDATA "Code\User"
+
+function EnsureVSCodeAvailableInAnyVersion {
     try {
-        Write-Output "Preparation of VSCode in version:"
         code --version
     }
     catch {
         Write-Output "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
         Write-Output "Please install Visual Studio Code before executing this script."
-        throw "Environment is not ready, use: https://code.visualstudio.com/"
+        throw "Environment is not ready, requires: https://code.visualstudio.com/"
     }
+}
+
+function Get-Normalized ($str) {
+    return "$str".Trim().ToLower()
 }
 
 function Resolve-ExtensionsGroup ($group) {
-    $gr = "$group".Trim().ToLower()
-    if ($ExtensionsGroups -contains $gr) {
+    $gr = Get-Normalized $group
+    if ($ValidExtensionsGroups -contains $gr) {
         return $gr
     }
 
-    $valid = $ExtensionsGroups -join "|"
-    throw "Unknown extensions group: '$group', use: ($valid)" `
-        + " as well as multiple values concatenated with: '$ExtensionsSeparator'."
+    $valid = $ValidExtensionsGroups -join $GroupsSeparator
+    throw "Unknown extensions group: '$group'" `
+        + ", please use one or many: $valid."
 }
 
-function Get-RequestedExtensionsGroups ($extensions) {
-    $requested = $extensions.Split($ExtensionsSeparator) `
-        | ForEach-Object { Resolve-ExtensionsGroup $_ }
+function Get-RequestedExtensionsGroups {
+    $requested = $Extensions.Split($GroupsSeparator) `
+    | ForEach-Object { Resolve-ExtensionsGroup $_ }
 
-    if ($requested -contains "all") {
-        return $ExtensionsGroups
+    if ($requested -contains $GrAll) {
+        $requested = $ExtensionsGroups
+    }
+
+    if ($SkipWork.IsPresent) {
+        $requested = $requested `
+        | Where-Object { $_ -ne $GrWork }
+    }
+
+    if ($SkipExtra.IsPresent) {
+        $requested = $requested `
+        | Where-Object { $_ -ne $GrExtra }
     }
 
     return $requested
 }
 
-function Test-ExtensionRequested ($requestedGroups, $extensionData) {
-    $extensionGroup = Resolve-ExtensionsGroup $extensionData.Metadata
-    return $requestedGroups -contains $extensionGroup
+function Test-RequestedGroup ($requested, $group) {
+    $gr = Resolve-ExtensionsGroup $group
+    return $requested -contains $gr
 }
 
-function InstallExtensionsFrom ($sourceFile, $extensions) {
-    $requested = Get-RequestedExtensionsGroups $extensions
-    $installArgs = LoadMetaLinesFrom $PSScriptRoot $sourceFile `
-        | Where-Object { Test-ExtensionRequested $requested $_ } `
-        | ForEach-Object {
-        $group = $_.Metadata
-        $extension = $_.Value
-        Write-Host ">> >> Will install '$group': '$extension'."
-        return "--install-extension '$extension'"
-    }
+function InstallExtensions ($extensionsNames) {
+    $installArgs = $extensionsNames `
+    | ForEach-Object { "--install-extension '$_'" }
 
     $installArgs = $installArgs -join " "
     $command = "code $installArgs"
     Invoke-Expression $command
 }
 
-function PrepareVSCode ($installExtensions) {
-    Write-Output "`n>> Installing VS Code extensions:"
-    InstallExtensionsFrom "extensions.txt" $installExtensions
+function InstallRequestedExtensions {
+    LogLines2 -Bar "Installing requested VS Code extensions groups: "
 
-    Write-Output "`n>> Linking configuration files to the VS Code:"
-    MakeHardLinkTo $VSCodeProfile $PSScriptRoot "keybindings.json"
-    MakeHardLinkTo $VSCodeProfile $PSScriptRoot "settings.json"
+    $requested = Get-RequestedExtensionsGroups
+    LogLines3 ($requested -join ", ")
+
+    LoadMetaLinesGroupedFrom $PSScriptRoot "extensions.txt" `
+    | Where-Object { Test-RequestedGroup $requested $_.Metadata } `
+    | ForEach-Object {
+        $group = $_.Metadata
+        LogLines -Bar -lvl 2 "Will install '$group' group:"
+        InstallExtensions $_.Values
+    }
 }
 
-function HardLinkConfigBack {
-    Write-Output "`n>> Linking configuration files from the VS Code:"
-    MakeHardLinkTo $PSScriptRoot $VSCodeProfile "keybindings.json" $false
-    MakeHardLinkTo $PSScriptRoot $VSCodeProfile "settings.json" $false
+function LinkConfigFiles {
+    LogLines2 -Bar "Linking configuration files at VS Code profile directory:"
+
+    MakeSymLinksAt $VSCodeProfile $PSScriptRoot "keybindings.json"
+    MakeSymLinksAt $VSCodeProfile $PSScriptRoot "settings.json"
 }
 
 #######################################################################################
 
-EnsureVSCodeAvailable
+LogLines -Bar "Preparation of VSCode:"
+EnsureVSCodeAvailableInAnyVersion
 
-if ($LinkBack.IsPresent) {
-    HardLinkConfigBack
-}
-else {
-    PrepareVSCode $Extensions
-}
+LinkConfigFiles
+InstallRequestedExtensions
 
-Write-Output "`n>> VS Code preparation: Done."
+LogLines -Bar "VS Code preparation: Done."
