@@ -2,6 +2,9 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $PSDefaultParameterValues["*:ErrorAction"] = "Stop"
 
+function Log ($message) {
+    Write-Output $message
+}
 
 function LogLines ($lines, $lvl = 1, [switch]$Bar) {
     if ($lvl -lt 1) {
@@ -13,7 +16,7 @@ function LogLines ($lines, $lvl = 1, [switch]$Bar) {
             -TypeName "System.String" `
             -ArgumentList @('#', 69)
 
-        Write-Output "`n$barLine"
+        Log "`n$barLine"
     }
 
     (@() + $lines) | ForEach-Object {
@@ -22,7 +25,7 @@ function LogLines ($lines, $lvl = 1, [switch]$Bar) {
             $line = ">> " + $line
         }
 
-        Write-Output $line
+        Log $line
     }
 }
 
@@ -37,7 +40,7 @@ function LogLines3 ($lines, [switch]$Bar) {
 function CouldNotFindForConfig ($what, $path) {
     $notFound = -not (Test-Path $path)
     if ($notFound) {
-        Write-Output ">> Could not find '$what' at: '$path'" `
+        Log "Could not find '$what' at: '$path'" `
             + ", configuration will be skipped."
     }
 
@@ -144,7 +147,7 @@ function RenameAsTimestampedBackup ($filePath) {
     $newPath = "$filePath.$timestamp.bak"
 
     Rename-Item $filePath -NewName $newPath -Force
-    Write-Output "Existing path had been renamed as backup: '$newPath'."
+    Log "Existing path had been renamed as backup: '$newPath'."
 }
 
 function MakeSymLinksAt ($targetDir, $sourceDir, $files) {
@@ -159,7 +162,7 @@ function MakeSymLinksAt ($targetDir, $sourceDir, $files) {
         }
 
         if (Test-Path $targetPath) {
-            Write-Output "Existing file '$fileName' will be replaced."
+            Log "Existing file '$fileName' will be replaced."
             if (AreSameFiles $targetPath $sourcePath) {
                 Remove-Item $targetPath -Force
             }
@@ -171,13 +174,13 @@ function MakeSymLinksAt ($targetDir, $sourceDir, $files) {
         New-Item $targetPath -ItemType SymbolicLink -Value $sourcePath `
         | Out-Null
 
-        Write-Output "File Symbolic-Link has been created:"
-        Write-Output "`t At '$(Resolve-Path $targetPath)'"
-        Write-Output "`t => '$(Resolve-Path $sourcePath)'"
+        Log "File Symbolic-Link has been created:"
+        Log "`t At '$(Resolve-Path $targetPath)'"
+        Log "`t => '$(Resolve-Path $sourcePath)'"
     }
 
-    Write-Output "Making Symbolic-Links at '$targetDir'"
-    Write-Output "`t into directory '$sourceDir'..."
+    Log "Making Symbolic-Links at '$targetDir'"
+    Log "`t into directory '$sourceDir'..."
 
     EnsurePathExists $targetDir
     (@() + $files) | ForEach-Object {
@@ -192,7 +195,7 @@ function ReplaceWitBackupAt ($targetDir, $sourceDir, $fileName) {
 
     if (Test-Path $targetPath) {
         if (AreSameFiles $targetPath $sourcePath) {
-            Write-Output "Target file ('$fileName') is same as source - Replacement skipped."
+            Log "Target file ('$fileName') is same as source - Replacement skipped."
             return
         }
         else {

@@ -20,7 +20,7 @@ function EnableRememberedArguments {
     Write-Output ">> Enabling Chocolatey's feature: Use Remembered Arguments For Upgrades..."
     choco feature enable --name useRememberedArgumentsForUpgrades
     if ($LASTEXITCODE -ne 0) {
-        throw "Could not enable feature 'useRememberedArgumentsForUpgrades'"
+        throw "Could not enable feature 'useRememberedArgumentsForUpgrades'."
     }
 }
 

@@ -1,20 +1,25 @@
 # EnvConfigs
 
-My personal environment's configuration
+> My Personal Environment's Configuration and Setup
+
+-- Domin
 
 ----
 
 ## Initial basic setup
 
 1. Set preferred [_PowerShell_](https://docs.microsoft.com/en-us/powershell/) execution policy for whole machine, using _PowerShell_ session (`PSSession`) with elevated permissions to the _Administrator Role_:
-    ```PowerShell
-    Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Confirm
-    ```
+
+   ```PowerShell
+   Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Confirm
+   ```
+
 2. Install [_Chocolatey_](https://chocolatey.org/about): a package manager for Windows, using elevated `PSSession`:
-    ```PowerShell
-    ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) `
-        | Invoke-Expression
-    ```
+
+   ```PowerShell
+   ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) `
+       | Invoke-Expression
+   ```
 
 ## Software via Chocolatey
 

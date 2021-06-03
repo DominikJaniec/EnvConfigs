@@ -20,8 +20,8 @@ function EnsureVSCodeAvailableInAnyVersion {
         code --version
     }
     catch {
-        Write-Output "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        Write-Output "Please install Visual Studio Code before executing this script."
+        Log "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        Log "Please install Visual Studio Code before executing this script."
         throw "Environment is not ready, requires: https://code.visualstudio.com/"
     }
 }
@@ -77,7 +77,7 @@ function InstallExtensions ($extensionsNames) {
 }
 
 function InstallRequestedExtensions {
-    LogLines2 -Bar "Installing requested VS Code extensions groups: "
+    LogLines2 -Bar "Installing requested VS Code extensions groups:"
 
     $requested = Get-RequestedExtensionsGroups
     LogLines3 ($requested -join ", ")

@@ -66,7 +66,7 @@ function PreparePwsh {
 
 #######################################################################################
 
-Write-Output "Preparing shells configuration..."
+Log "Preparing shells configuration..."
 PrepareGit
 PrepareBash
 PreparePwsh
