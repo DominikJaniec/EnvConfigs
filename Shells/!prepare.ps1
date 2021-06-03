@@ -66,7 +66,10 @@ function PreparePwsh {
 
 #######################################################################################
 
-Log "Preparing shells configuration..."
+Log -Bar "Preparing shells configuration:"
+
 PrepareGit
 PrepareBash
 PreparePwsh
+
+Log -Bar "Configuration of shells succeeded."

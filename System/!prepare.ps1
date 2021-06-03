@@ -13,7 +13,7 @@ param(
 
 
 $ProfilePath_Repos = Join-Path $Env:USERPROFILE "Repos"
-$ExpectedPath_KnownPATH = Join-Path $Env:ChocolateyInstall "bin"
+$KnownGlobalPATH = Join-Path $Env:ChocolateyInstall "bin"
 
 function ShouldExecuteEverything {
     $any = $AssocTxtfile.IsPresent `
@@ -91,7 +91,7 @@ function CleanupContextMenuItems () {
     LogLines "Windows Explorer's context menu for folders cleaned up."
 }
 
-function ProcessExpSchedule () {
+function ScheduleProcessExplorer () {
     $processExplorerExpectedPath = Join-Path $Env:ChocolateyInstall "lib\procexp\tools\procexp.exe"
     LogLines -Bar "Scheduling autostart of Process Explorer on user logon."
     if (CouldNotFindForConfig "Process Explorer" $processExplorerExpectedPath) {
@@ -126,6 +126,7 @@ function PinToQuickAccess ($directoryPath) {
 
 function SetupWindowsExplorer () {
     LogLines -Bar "Fixing Windows Explorer configuration..."
+
     $regExplorer = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer"
     Set-ItemProperty $regExplorer ShowFrequent 0
     Set-ItemProperty $regExplorer ShowRecent 0
@@ -167,16 +168,45 @@ function EmbellishRepos () {
     LogLines "'Repos' folder's appearance changed."
 }
 
+function SetupDitto {
+    $dittoPath = Join-Path $Env:ProgramFiles "Ditto\Ditto.exe"
+    ConfigUnderRestartedProcess "Ditto" "the clipboard manager" $dittoPath {
+        ImportIntoRegister "Ditto's config" $PSScriptRoot `
+            "Ditto-configuration.reg"
+    }
+}
+
+function SetupFlux {
+    $fluxPath = Join-Path $Env:LOCALAPPDATA "FluxSoftware\Flux\flux.exe"
+    ConfigUnderRestartedProcess "f.lux" "let's reduce eyestrain" $fluxPath {
+        ImportIntoRegister "f.lux's setup" $PSScriptRoot `
+            "f.lux-configuration.reg"
+    }
+}
+
+function SetupHwinfo {
+    $hwinfoDirectory = Join-Path $Env:ProgramFiles "HWiNFO64"
+    $hwinfoPath = Join-Path $hwinfoDirectory "HWiNFO64.EXE"
+    ConfigUnderRestartedProcess "HWiNFO64" "sense HW sensors" $hwinfoPath {
+        ImportIntoRegister "HWiNFO64" $PSScriptRoot `
+            "HWiNFO64-sensors.reg"
+
+        MakeSymLinksAt $hwinfoDirectory `
+            $PSScriptRoot "HWiNFO64.INI"
+    }
+}
+
 function UpdateScriptInstall {
     $updateScript = "update-system.bat"
     LogLines -Bar "Installing '$updateScript' script within PATH known directory..."
-    MakeSymLinksAt $ExpectedPath_KnownPATH $PSScriptRoot $updateScript
+    MakeSymLinksAt $KnownGlobalPATH $PSScriptRoot $updateScript
 
     LogLines "Script '$updateScript' should be available for Admin."
 }
 
 #######################################################################################
 
+Log -Bar "Beginning to configure System:"
 $all = ShouldExecuteEverything
 
 if ($all -or $AssocTxtfile.IsPresent) {
@@ -188,7 +218,7 @@ if ($all -or $CtxMenuCleanUp.IsPresent) {
 }
 
 if ($all -or $ProcessExpSchedule.IsPresent) {
-    ProcessExpSchedule
+    ScheduleProcessExplorer
 }
 
 if ($all -or $PrepareExplorer.IsPresent) {
@@ -197,31 +227,15 @@ if ($all -or $PrepareExplorer.IsPresent) {
 }
 
 if ($all -or $DittoConfigSetup.IsPresent) {
-    $dittoPath = Join-Path $Env:ProgramFiles "Ditto\Ditto.exe"
-    ConfigUnderRestartedProcess "Ditto" "the clipboard manager" $dittoPath {
-        ImportIntoRegister "Ditto's config" $PSScriptRoot `
-            "Ditto-configuration.reg"
-    }
+    SetupDitto
 }
 
 if ($all -or $FluxConfigSetup.IsPresent) {
-    $fluxPath = Join-Path $Env:LOCALAPPDATA "FluxSoftware\Flux\flux.exe"
-    ConfigUnderRestartedProcess "f.lux" "let's reduce eyestrain" $fluxPath {
-        ImportIntoRegister "f.lux's setup" $PSScriptRoot `
-            "f.lux-configuration.reg"
-    }
+    SetupFlux
 }
 
 if ($all -or $HWiNFO64ConfigSetup.IsPresent) {
-    $hwinfoDirectory = Join-Path $Env:ProgramFiles "HWiNFO64"
-    $hwinfoPath = Join-Path $hwinfoDirectory "HWiNFO64.EXE"
-    ConfigUnderRestartedProcess "HWiNFO64" "sense HW sensors" $hwinfoPath {
-        ImportIntoRegister "HWiNFO64" $PSScriptRoot `
-            "HWiNFO64-sensors.reg"
-
-        MakeSymLinksAt $hwinfoDirectory `
-            $PSScriptRoot "HWiNFO64.INI"
-    }
+    SetupHwinfo
 }
 
 if ($all -or $UpdateScriptInstall.IsPresent) {

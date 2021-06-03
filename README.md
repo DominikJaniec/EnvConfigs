@@ -1,8 +1,8 @@
 # EnvConfigs
 
 > My Personal Environment's Configuration and Setup
-
--- Domin
+>
+> -- Domin
 
 ----
 
