@@ -4,17 +4,19 @@
 >
 > -- Domin
 
-----
+## Initial preparation
 
-## Initial basic setup
+1. Obtain [current repository](https://github.com/DominikJaniec/EnvConfigs) by cloning it, or what is more likely at fresh environment, by [downloading ZIP archive](https://github.com/DominikJaniec/EnvConfigs/archive/refs/heads/main.zip) and extracting it. Then place that `EnvConfig` within desired `Repos` _Home Directory_ - e.g. `~/Repos` or `D:\Repos`.
 
-1. Set preferred [_PowerShell_](https://docs.microsoft.com/en-us/powershell/) execution policy for whole machine, using _PowerShell_ session (`PSSession`) with elevated permissions to the _Administrator Role_:
+2. Using [`!elevate-session.ps1`](!elevate-session.ps1) script, start [_PowerShell_](https://docs.microsoft.com/en-us/powershell/) session (`PSSession`) elevated to the _Administrator Role_.
+
+3. Set necessary [execution policy](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-5.1) for the whole machine:
 
    ```PowerShell
    Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Confirm
    ```
 
-2. Install [_Chocolatey_](https://chocolatey.org/about): a package manager for Windows, using elevated `PSSession`:
+4. Install [_Chocolatey_](https://chocolatey.org/about): a package manager for Windows, using elevated `PSSession`:
 
    ```PowerShell
    ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) `
@@ -27,7 +29,9 @@
    * Optional script's parameter: `-PkgLevel (core|tools|dev|full)`
    * Default value is assumed to be: `-PkgLevel full`
    * Each value encompass all previous levels.
+
 2. That script requires _Chocolatey_ and have to be executed from `PSSession` elevated to _Admin_.
+
 3. What does that script do?
    * Will turn on `choco`'s feature: [_Use Remembered Arguments For Upgrades_](https://docs.chocolatey.org/en-us/configuration#general-1).
    * Will install every [defined applications](Choco/packages.txt) according to selected packages level.
@@ -37,8 +41,10 @@
 
 1. Execute prepare script: [`> .\Shells\!prepare.ps1`](Shells/!prepare.ps1)
    * Script provides a single switch: `-PwshAllUsers`.
+
 2. That script have to be executed from `PSSession` elevated to _Admin_ from target user.
    * This requirement could be lifted, when creating `SymbolicLink` will be available to normal users.
+
 3. What does that script do?
    * Will make symbolic-links at _Home_ (`~/`) directory of current user with Bash and Git configuration files: [`.bash_profile`](Shells/.bash_profile) + [`.bashrc`](Shells/.bashrc), and [`.gitconfig`](Shells/.gitconfig).
    * Will install pwsh-modules: [`posh-git`](https://www.powershellgallery.com/packages/posh-git) and [`oh-my-posh`](https://www.powershellgallery.com/packages/oh-my-posh), which are utilized by `Profile.ps1` for more user friendly UX of terminal.
@@ -50,7 +56,9 @@
 1. Execute prepare script: [`> .\System\!prepare.ps1`](System/!prepare.ps1)
    * Script has a few switches. When any of then is present, only related changes will be executed. Script by default executes all of them.
    * Available switches: `-AssocTxtfile`, `-CtxMenuCleanUp`, `-ProcessExpSchedule`, `-PrepareExplorer`, `-DittoConfigSetup`, `-FluxConfigSetup`, `-HWiNFO64ConfigSetup`, `-UpdateScriptInstall`.
+
 2. That script have to be executed from `PSSession` elevated to _Admin_ from target user.
+
 3. What does that script do?
    * `-AssocTxtfile`: Will setup every [defined files' extensions](System/txtfile_extensions.txt) to be treated as Text-Based files by _Windows Explorer_.
    * `-CtxMenuCleanUp`: Will clean up context menu of folders from unnecessary [defined entries](System/unwanted_cmds.txt).
@@ -67,7 +75,9 @@
    * Optional multi-value parameter: `-Extensions`: defines which _extensions groups_ will be installed. Available values: `core`, `tools`, `dev`, `webdev`, `work`, `extra` - where `all` matches to every extension and multiple values are separated by comma.
    * There are two additional _switches_: `SkipExtra` and `SkipWork`, which excludes matched group even explicitly requested.
    * By default `-Extensions` assumes `all` group, for ease of use.
+
 2. That script requires installed _VS Code_, which could be download from [Microsoft](https://code.visualstudio.com/docs/?dv=win).
+
 3. What does that script do?
    * Will link configuration files ([`settings.json`](VSCode/settings.json), [`keybindings.json`](VSCode/keybindings.json)) at User Code's profile directory.
    * Will install every [defined extensions](VSCode/extensions.txt) for _VS Code_ according to selected _extensions-group_.
@@ -84,10 +94,33 @@
 
 ----
 
-_Assumptions and remarks:_
+## Assumptions and remarks
 
-* Headers presented above are set in proposed order of execution of configuration steps.
-* Most of steps expects that, this Repository had been cloned under path: `~/Repos/EnvConfigs`.
-* Every _prepare script_ (`!prepare.ps1`) should be run from this Repository's root directory via _PowerShell_.
-* Almost all _prepare scripts_ expect to be run within _PowerShell_ session with elevated permissions to the _Administrator Role_. To obtain elevated PowerShell console, just execute: [`$#> PowerShell.exe -File ".\!elevate.ps1"`](!elevate.ps1)
-* To execute those _prepare scripts_ [_PowerShell_](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-windows?view=powershell-7.1) is to be expected in version bigger then 3. Windows 10 currently comes with version 5, however to check one can use: `$PSVersionTable.PSVersion` variable.
+* Chapters presented above are set in the proposed order of execution of steps for configuration setup.
+* Initial placement of `EnvConfigs` repository is very important and should be within desired `Repos` catalog:
+  * Many _prepare script_ (`!prepare.ps1`) will make symbolic-links into files located here.
+  * The _prepare script_ of `System` will pin as _favorites_ and _decorate_ a parent directory as `Repos`.
+  * Every _prepare script_ should be run from this repository's root directory via _PowerShell_.
+* It is required to have [_PowerShell_](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-windows?view=powershell-7.1) in version greater then `3.0`. Fortunately, Windows 10 currently comes with version `5.1` - to check it, one can type: `$PSVersionTable.PSVersion` within running `PSSession`.
+* Almost all scripts expect to be run within _PowerShell_ session with elevated permissions to the _Administrator Role_. To obtain elevated PowerShell console, just execute:
+
+   ```sh
+   PowerShell.exe -NoProfile -File ".\!elevate-session.ps1"
+   ```
+
+## Track the `EnvConfigs` repository
+
+1. While preparing fresh environment, current repository was probably just downloaded without any _Git Tracking_ ability - as there were no `git` available at beginning of setup.
+   * It is **not recommended** to _clone_ it again in desired place, as it should be already in expected `Repos` _Home Directory_.
+   * It is **strongly encouraged** to restore _Git_ support within current directory - to easily track configuration changes.
+
+2. To reestablish _Git_ support within current repository, one should use favorite terminal under their user and call in order:
+
+   ```sh
+   git init --initial-branch=main
+   git remote add origin https://github.com/DominikJaniec/EnvConfigs.git
+   git fetch
+   git reset origin/main --mixed
+   git branch --set-upstream-to=origin/main
+   git status
+   ```

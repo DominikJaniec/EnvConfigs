@@ -11,5 +11,5 @@ if (IsCurrentAdmin) {
 
 Write-Output ">> Starting a new PowerShell console with elevated permissions (Admin)..."
 
-$init = "-NoExit -Command Set-Location '$PSScriptRoot'"
-Start-Process powershell.exe -Verb runAs -ArgumentList $init
+$init = "-NoExit -NoProfile -Command Set-Location '$PSScriptRoot'"
+Start-Process PowerShell.exe -Verb runAs -ArgumentList $init
