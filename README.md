@@ -51,22 +51,22 @@
    * Symbolic-link will also be created for profile-file for PowerShell at [`~/Documents/PowerShell/Profile.ps1`](Shells/Profile.ps1) - no profile for old but yet default PowerShell 5.
    * When `-PwshAllUsers` is provided, the Pwsh is set up with Profile and Modules for [All Users](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_profiles) under `C:/Program Files/PowerShell`.
 
-## Windows configuration
+## System Windows configuration
 
 1. Execute prepare script: [`> .\System\!prepare.ps1`](System/!prepare.ps1)
    * Script has a few switches. When any of then is present, only related changes will be executed. Script by default executes all of them.
-   * Available switches: `-AssocTxtfile`, `-CtxMenuCleanUp`, `-ProcessExpSchedule`, `-PrepareExplorer`, `-DittoConfigSetup`, `-FluxConfigSetup`, `-HWiNFO64ConfigSetup`, `-UpdateScriptInstall`.
+   * Available switches: `-AssocTxtfile`, `-CtxMenuCleanUp`, `-ProcessExpSchedule`, `-WinExplorerPrepare`, `-DittoConfigSetup`, `-FluxConfigSetup`, `-HWiNFO64ConfigSetup`, `-UpdateScriptInstall`.
 
 2. That script have to be executed from `PSSession` elevated to _Admin_ from target user.
 
 3. What does that script do?
    * `-AssocTxtfile`: Will setup every [defined files' extensions](System/txtfile_extensions.txt) to be treated as Text-Based files by _Windows Explorer_.
    * `-CtxMenuCleanUp`: Will clean up context menu of folders from unnecessary [defined entries](System/unwanted_cmds.txt).
-   * `-ProcessExpSchedule`: Will schedule [_Process Explorer_](https://chocolatey.org/packages/procexp) by _Mark Russinovich_ to start on _Logon_ of any user.
-   * `-PrepareExplorer`: Will fix _Explorer's_ configuration and setup [_Quick Access_](https://support.microsoft.com/en-us/help/4027032/windows-pin-remove-and-customize-in-quick-access) with a few handy folders. It will also embellish current user's directory `~/Repos` with appropriate [icon](System/template_Repos/GitDirectory.png) for _Git_.
-   * `-DittoConfigSetup`: Will load into Register non-default Ditto's configuration defined within [`ditto-configuration.reg`](System/ditto-configuration.reg) file.
-   * `-FluxConfigSetup`: Will import Register-based f.lux's configuration adjusted for Domin's lifestyle.
-   * `-HWiNFO64ConfigSetup`: Will configure HWiNFO64 to sense CPU and GPU temperatures of private laptop.
+   * `-WinExplorerPrepare`: Will fix _Explorer's_ display configuration and organize [_Quick Access_](https://support.microsoft.com/en-us/help/4027032/windows-pin-remove-and-customize-in-quick-access) with a few handy folders. This script expect that there is a parent directory called `Repos` and one of theirs sibling is called `Personal` - both of them will be pinned.
+   * `-ProcessExpSchedule`: Will schedule [_Process Explorer_](https://docs.microsoft.com/en-us/sysinternals/downloads/process-explorer) by _Mark Russinovich_ to start on _Logon_.
+   * `-DittoConfigSetup`: Will load into Register non-default-personal [Ditto's](https://ditto-cp.sourceforge.io/) configuration.
+   * `-FluxConfigSetup`: Will import Register-based [f.lux's](https://justgetflux.com/) configuration adjusted for Domin's lifestyle.
+   * `-HWiNFO64ConfigSetup`: Will configure [HWiNFO64](https://www.hwinfo.com/) to sense CPU and GPU temperatures of CGL.
    * `-UpdateScriptInstall`: Will link [`update-system.bat`](System/update-system.bat) into `PATH` available directory, so _Admin_ can request and execute whole _System_ update.
 
 ## Visual Studio Code
@@ -97,8 +97,8 @@
 ## Assumptions and remarks
 
 * Chapters presented above are set in the proposed order of execution of steps for configuration setup.
-* Initial placement of `EnvConfigs` repository is very important and should be within desired `Repos` catalog:
-  * Many _prepare script_ (`!prepare.ps1`) will make symbolic-links into files located here.
+* Initial placement of `EnvConfigs` repository is very important and should be under desired `Repos`:
+  * Many _prepare script_ (i.e. `!prepare.ps1`) will make symbolic-links into files located here.
   * The _prepare script_ of `System` will pin as _favorites_ and _decorate_ a parent directory as `Repos`.
   * Every _prepare script_ should be run from this repository's root directory via _PowerShell_.
 * It is required to have [_PowerShell_](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-windows?view=powershell-7.1) in version greater then `3.0`. Fortunately, Windows 10 currently comes with version `5.1` - to check it, one can type: `$PSVersionTable.PSVersion` within running `PSSession`.
@@ -110,11 +110,11 @@
 
 ## Track the `EnvConfigs` repository
 
-1. While preparing fresh environment, current repository was probably just downloaded without any _Git Tracking_ ability - as there were no `git` available at beginning of setup.
+1. While preparing fresh environment, current repository was probably just downloaded as ZIP without any _Git Tracking_ ability - as there were no `git` available at beginning of setup.
    * It is **not recommended** to _clone_ it again in desired place, as it should be already in expected `Repos` _Home Directory_.
-   * It is **strongly encouraged** to restore _Git_ support within current directory - to easily track configuration changes.
+   * It is **strongly encouraged** to restore _Git_ support within current directory - to easily track future configuration changes.
 
-2. To reestablish _Git_ support within current repository, one should use favorite terminal under their user and call in order:
+2. To reestablish _Git_ support within current repository, one should use favorite terminal under their own user account and call in order:
 
    ```sh
    git init --initial-branch=main

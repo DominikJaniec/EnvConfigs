@@ -2,6 +2,9 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $PSDefaultParameterValues["*:ErrorAction"] = "Stop"
 
+
+$GloballyKnownPATH = Join-Path $Env:ChocolateyInstall "bin"
+
 function Log ($message) {
     Write-Output $message
 }

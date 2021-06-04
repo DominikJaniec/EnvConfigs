@@ -1,8 +1,8 @@
 param(
     [switch]$AssocTxtfile,
     [switch]$CtxMenuCleanUp,
+    [switch]$WinExplorerPrepare,
     [switch]$ProcessExpSchedule,
-    [switch]$PrepareExplorer,
     [switch]$DittoConfigSetup,
     [switch]$FluxConfigSetup,
     [switch]$HWiNFO64ConfigSetup,
@@ -11,15 +11,12 @@ param(
 
 . ".\common.ps1"
 
-
-$ProfilePath_Repos = Join-Path $Env:USERPROFILE "Repos"
-$KnownGlobalPATH = Join-Path $Env:ChocolateyInstall "bin"
-
 function ShouldExecuteEverything {
-    $any = $AssocTxtfile.IsPresent `
+    $any = $false `
+        -or $AssocTxtfile.IsPresent `
         -or $CtxMenuCleanUp.IsPresent `
+        -or $WinExplorerPrepare.IsPresent `
         -or $ProcessExpSchedule.IsPresent `
-        -or $PrepareExplorer.IsPresent `
         -or $DittoConfigSetup.IsPresent `
         -or $FluxConfigSetup.IsPresent `
         -or $HWiNFO64ConfigSetup.IsPresent `
@@ -124,58 +121,68 @@ function ScheduleProcessExplorer () {
     LogLines "Process Explorer scheduled to autostart on logon."
 }
 
-function PinToQuickAccess ($directoryPath) {
-    if (-not (Test-Path $directoryPath)) {
-        return
-    }
+function LocateUpperDirPath ($name) {
+    $current = $PSScriptRoot
 
-    $x = New-Object -ComObject "Shell.Application"
-    $x.NameSpace($directoryPath).Self.InvokeVerb("pintohome")
+    while ($true) {
+        $currentName = Split-Path $current -Leaf
+        if ($currentName -eq $name) {
+            return $current
+        }
+
+        $children = Get-ChildItem $current -Name
+        if ($children -contains $name) {
+            return Join-Path $current $name
+        }
+
+        $current = Split-Path $current -Parent
+        if (-not $current) {
+            throw "Cannot locate '$name' directory nowhere near." `
+                + " Expected to find it as parents or among their sibling." `
+                + " Initial searched path: $PSScriptRoot"
+        }
+    }
+}
+
+function KeepOnlyQuickAccess ($keepPathLeafs) {
+    $app = New-Object -ComObject "Shell.Application"
+    $app.Namespace("shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}").Items() `
+    | Where-Object { $keepPathLeafs -notcontains (Split-Path $_.Path -Leaf) } `
+    | ForEach-Object {
+        LogLines2 "Unpinning from Quick Access: $($_.Name) '$($_.Path)'."
+        $_.InvokeVerb("unpinfromhome")
+    }
+}
+
+function PinToQuickAccess ($directoryPath) {
+    $app = New-Object -ComObject "Shell.Application"
+    $app.NameSpace($directoryPath).Self.InvokeVerb("pintohome")
     LogLines2 "Pinned to the Quick Access: '$directoryPath'."
 }
 
 function SetupWindowsExplorer () {
-    LogLines -Bar "Fixing Windows Explorer configuration..."
+    LogLines -Bar "Fixing Windows Explorer display behavior configuration..."
 
     $regExplorer = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer"
     Set-ItemProperty $regExplorer ShowFrequent 0
     Set-ItemProperty $regExplorer ShowRecent 0
 
     $regExplorerAdvanced = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+    Set-ItemProperty $regExplorerAdvanced Hidden 1
     Set-ItemProperty $regExplorerAdvanced HideFileExt 0
-    Set-ItemProperty $regExplorerAdvanced ShowSuperHidden 1
+    # Note: New Explorer window will start at "This PC":
     Set-ItemProperty $regExplorerAdvanced LaunchTo 1
+    # Note: I'm not sure, if we need to see System-Hidden files:
+    # Set-ItemProperty $regExplorerAdvanced ShowSuperHidden 1
 
-    LogLines "Pinning handy directory to the Quick Access..."
-    PinToQuickAccess($Env:USERPROFILE)
-    PinToQuickAccess($ProfilePath_Repos)
+    LogLines "Setting only handy directory pinned to the Quick Access..."
+
+    KeepOnlyQuickAccess @("Desktop", "Downloads", "Work")
+    PinToQuickAccess (LocateUpperDirPath "Personal")
+    PinToQuickAccess (LocateUpperDirPath "Repos")
+    PinToQuickAccess $Env:USERPROFILE
 
     LogLines "Windows Explorer has been configured."
-}
-
-function EmbellishRepos () {
-    LogLines -Bar "Embellishing '~/Repos' by setting up directory's icon..."
-    if (CouldNotFindForConfig "Repos directory" $ProfilePath_Repos) {
-        return
-    }
-
-    $source = Join-Path $PSScriptRoot "template_Repos"
-    $iconFile = "GitDirectory.ico"
-    $configFile = "desktop.ini"
-
-    ReplaceWitBackupAt $ProfilePath_Repos $source $iconFile
-    $iconFile = Join-Path $ProfilePath_Repos $iconFile
-    SetAttributesOf $iconFile "Hidden"
-
-    ReplaceWitBackupAt $ProfilePath_Repos $source $configFile
-    $configFile = Join-Path $ProfilePath_Repos $configFile
-    SetAttributesOf $configFile "Hidden"
-    SetAttributesOf $configFile "System"
-
-    # Only to force folder's icon load by Explorer:
-    SetAttributesOf $ProfilePath_Repos "ReadOnly"
-
-    LogLines "'Repos' folder's appearance changed."
 }
 
 function SetupDitto {
@@ -206,10 +213,10 @@ function SetupHwinfo {
     }
 }
 
-function UpdateScriptInstall {
+function InstallSystemUpdater {
     $updateScript = "update-system.bat"
     LogLines -Bar "Installing '$updateScript' script within PATH known directory..."
-    MakeSymLinksAt $KnownGlobalPATH $PSScriptRoot $updateScript
+    MakeSymLinksAt $GloballyKnownPATH $PSScriptRoot $updateScript
 
     LogLines "Script '$updateScript' should be available for Admin."
 }
@@ -231,9 +238,8 @@ if ($all -or $ProcessExpSchedule.IsPresent) {
     ScheduleProcessExplorer
 }
 
-if ($all -or $PrepareExplorer.IsPresent) {
+if ($all -or $WinExplorerPrepare.IsPresent) {
     SetupWindowsExplorer
-    EmbellishRepos
 }
 
 if ($all -or $DittoConfigSetup.IsPresent) {
@@ -249,7 +255,7 @@ if ($all -or $HWiNFO64ConfigSetup.IsPresent) {
 }
 
 if ($all -or $UpdateScriptInstall.IsPresent) {
-    UpdateScriptInstall
+    InstallSystemUpdater
 }
 
 LogLines -Bar "System preparation: Done."
