@@ -100,11 +100,21 @@ function ScheduleProcessExplorer () {
 
     $scheduleName = "Process Explorer - Autostart"
     LogLines2 "Looking for schedule-task: '$scheduleName'..."
-    schtasks /Query /TN "$scheduleName" 2> $null
+    try {
+        schtasks /Query /TN "$scheduleName" 2> $null
+    }
+    catch {
+        # Required, as ignoring errors with `2> $null` (Error Stream redirection)
+        # triggers `$ErrorActionPreference = "Stop"` which kills script execution.
+    }
 
     if ($LASTEXITCODE -ne 0) {
         LogLines2 "Scheduling new Autostart task: '$scheduleName'"
-        schtasks /Create /SC ONLOGON /TN "$scheduleName" /TR "$processExplorerExpectedPath /t"
+        schtasks /Create /SC ONLOGON /RL HIGHEST /TN "$scheduleName" /TR "$processExplorerExpectedPath /t"
+
+        if ($LASTEXITCODE -eq 0) {
+            schtasks /Query /TN "$scheduleName"
+        }
 
         if ($LASTEXITCODE -ne 0) {
             throw "Could not schedule Autostart for the Process Explorer."
