@@ -9,7 +9,10 @@ if (IsCurrentAdmin) {
     exit
 }
 
-Write-Output ">> Starting a new PowerShell console with elevated permissions (Admin)..."
+$logFile = Join-Path $PSScriptRoot "execution-transcript-$(Get-Date -Format yyyy-MM-dd).log"
+$transcription = "Start-Transcript -Path '$logFile' -Append -IncludeInvocationHeader"
+$initInnerCommand = "$transcription; Set-Location '$PSScriptRoot'"
+$initArgs = "-NoExit -NoProfile -Command `"$initInnerCommand`""
 
-$init = "-NoExit -NoProfile -Command Set-Location '$PSScriptRoot'"
-Start-Process PowerShell.exe -Verb runAs -ArgumentList $init
+Write-Output ">> Starting a new PowerShell console with elevated permissions (Admin)..."
+Start-Process PowerShell.exe -Verb runAs -ArgumentList $initArgs
