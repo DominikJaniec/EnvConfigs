@@ -33,6 +33,7 @@ tools|ms-vscode.hexeditor
 tools|ms-vscode-remote.remote-wsl
 tools|redhat.vscode-yaml
 tools|redhat.vscode-xml
+tools|github.remotehub
 
 
 dev|ionide.ionide-fsharp
