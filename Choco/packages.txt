@@ -75,6 +75,7 @@ dev|curl
 dev|fiddler
 dev|wireshark
 dev|sqlitebrowser
+dev|wsl2 --params "/Retry:true"
 dev|virtualbox --params "/NoDesktopShortcut"
 dev|docker-desktop
 dev|kubernetes-cli
