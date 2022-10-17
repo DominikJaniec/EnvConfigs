@@ -7,15 +7,21 @@
     name = Dominik Janiec
     email = dominikjaniec@gmail.com
 
-[apply]
-    whitespace = fix
-
-[commit]
-    gpgSign = true
+[init]
+    defaultBranch = main
 
 [core]
     autocrlf = true
     editor = vim
+
+[commit]
+    gpgSign = true
+
+[apply]
+    whitespace = fix
+
+[pull]
+    ff = only
 
 [diff]
     tool = vimdiff
@@ -31,13 +37,9 @@
     keepBackup = false
     trustExitCode = true
 
-[pull]
-    ff = only
-
 
 [alias]
     st = status
-    lo = log --oneline --first-parent -9
     br = branch
     sw = switch
     df = diff --word-diff
@@ -57,8 +59,12 @@
     dftw = difftool --tool winmerge
     mgtw = mergetool --tool winmerge
 
-    loog = log --oneline --graph
-    last = log --oneline --no-decorate -1
+    log-line = log --oneline
+    loog = log-line --graph
+    loo = log-line --first-parent -9
+    lo = loo --no-decorate -7
+
+    last = lo -1
     visualise = !start gitk --all
     details = show --format=fuller --show-signature --summary --stat --stat-width=140 --stat-graph-width=20
 

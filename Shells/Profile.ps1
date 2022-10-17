@@ -4,11 +4,26 @@
 
 
 ####################################################################
-### Helpers
+### Verbosity level
 
 ### Note: Uncomment one whichever you need ;)
 # $DebugPreference = "Continue"
 # $VerbosePreference = "Continue"
+
+function Write-DebugTimestamped ($MessageLines) {
+  $timestamp = Get-Date -Format yyyyMMdd-HH:mm:ss.fff
+  $lines = @() + $MessageLines
+  Write-Debug "$timestamp| $($lines[0])"
+  $lines | Select-Object -Skip 1 `
+  | ForEach-Object { Write-Debug "`t$_" }
+}
+
+Write-Verbose "Verbosity set to: $VerbosePreference"
+Write-DebugTimestamped "Debug verbosity set to: $DebugPreference"
+
+
+####################################################################
+### Helpers
 
 function pair ($fst, $snd) {
   return New-Object `
@@ -26,38 +41,101 @@ function dump ($obj, $name = "Given object") {
   }
 }
 
-function Write-DebugTimestamped ($MessageLines) {
-  $timestamp = Get-Date -Format yyyyMMdd-HH:mm:ss.fff
-  $lines = @() + $MessageLines
-  Write-Debug "$timestamp| $($lines[0])"
-  $lines | Select-Object -Skip 1 `
-  | ForEach-Object { Write-Debug "`t$_" }
+function Find-ParentProcess ($ParentName, $BasePID = $PID) {
+  function procBy ($id) {
+    return Get-Process -Id $id
+  }
+
+  $process = procBy $BasePID
+  while ($null -ne $process) {
+    if (-not $process.Parent) {
+      return $null
+    }
+
+    $process = procBy $process.Parent.Id
+    if ($ParentName -eq $process.Name) {
+      return $process
+    }
+  }
+
+  return $null
 }
 
-Write-DebugTimestamped "Helpers for Profile.ps1 registered."
+function Resolve-PathOrPwd ($Path) {
+  return ($null -eq $path) `
+    ? (Get-Location) `
+    : (Resolve-Path $path)
+}
+
+Write-DebugTimestamped "Common helpers for Profile.ps1 registered."
 
 
 ####################################################################
 ### Environment
 
-Write-DebugTimestamped "Defining Environment related commands..."
-
 Set-Alias -Name exp `
-  -Value explorer
+  -Value explorer.exe
 
-function Get-CmdletAlias ($cmdletName) {
+Set-Alias -Name cmds `
+  -Value Get-Command
+
+
+function Get-Environment {
+  Get-ChildItem Env:
+}
+
+function Get-EnvironmentPath {
+  $Env:Path -split ";"
+}
+
+Set-Alias -Name list-env `
+  -Value Get-Environment
+
+Set-Alias -Name list-path `
+  -Value Get-EnvironmentPath
+
+
+function Show-AliasWhere ($WhereBlock) {
   Get-Alias `
-  | Where-Object -FilterScript { $_.Definition -like "$cmdletName" } `
+  | Where-Object -FilterScript $WhereBlock
   | Format-Table -Property Definition, Name -AutoSize
 }
 
-Set-ALias -Name alias-for `
-  -Value Get-CmdletAlias
+function Get-AliasForCmdlet ([Parameter(Position = 0)] $CmdletNameLike) {
+  Show-AliasWhere { $_.Definition -like "$CmdletNameLike" }
+}
 
-Write-DebugTimestamped "Common aliases defined."
+function Get-CmdletFromAlias ([Parameter(Position = 0)] $AliasLike) {
+  Show-AliasWhere { $_.Name -like "$AliasLike" }
+}
+
+Set-Alias -Name alias-as `
+  -Value Get-CmdletFromAlias
+
+Set-Alias -Name alias-of `
+  -Value Get-AliasForCmdlet
 
 
-### navigation and exploration
+function ff ($uri) {
+  $firefox = "C:\Program Files\Mozilla Firefox\firefox.exe"
+  if (-not (Test-Path $firefox)) {
+    throw "Cannot find FireFox at '$firefox'."
+  }
+
+  if (Test-Path $uri) {
+    $file = Resolve-Path $uri
+    $file = "$file".Replace("\", "/")
+    $uri = "file:///$file"
+  }
+
+  & $firefox $uri
+}
+
+Write-DebugTimestamped "Environment related commands defined."
+
+
+####################################################################
+### Navigation and Exploration
 
 function cd.. { Set-Location .. }
 function .. { Set-Location .. }
@@ -67,10 +145,6 @@ function ..... { Set-Location ../../../.. }
 function ...... { Set-Location ../../../../.. }
 function ....... { Set-Location ../../../../../.. }
 function ........ { Set-Location ../../../../../../.. }
-
-function la {
-  Get-ChildItem -Force
-}
 
 function l ($path, [switch]$a) {
   function format ($item) {
@@ -104,15 +178,12 @@ function l ($path, [switch]$a) {
     return "$icon $name"
   }
 
-  $path = ($null -eq $path) `
-    ? (Get-Location) `
-    : (Resolve-Path $path)
-
+  $path = Resolve-PathOrPwd $path
   Write-Verbose "Listing content of `"$path`":"
 
   $source = $a.IsPresent `
-    ? (Get-ChildItem -Path $path -Force) `
-    : (Get-ChildItem -Path $path -Exclude ".*")
+    ? (Get-ChildItem $path -Force) `
+    : (Get-ChildItem $path -Exclude ".*")
 
   $source `
   | Sort-Object -Property Name `
@@ -124,19 +195,43 @@ function l ($path, [switch]$a) {
   | Format-Wide
 }
 
+function ll ($path) {
+  Get-ChildItem $path -Force
+}
+
+function la ($path) {
+  l -a $path
+}
+
 function o ($path) {
-  Set-Location -Path $path
+  Set-Location $path
 }
 
-function e ($path) {
-  o $path `
-    && l
+function ol ($path) {
+  o $path && l
 }
 
-Write-DebugTimestamped "Navigation toolkit prepared."
+function ola ($path) {
+  o $path && l -a
+}
+
+function u () {
+  Set-Location ..
+}
+
+function ul () {
+  u && l
+}
+
+function ula () {
+  u && l -a
+}
+
+Write-DebugTimestamped "Navigation commands toolkit prepared."
 
 
-### the `start-ish` utility
+####################################################################
+### The `start-ish` Utility
 
 function start-wt ($subCommand) {
   Write-Verbose "Launching Windows Terminal in current directory..."
@@ -165,29 +260,31 @@ Write-DebugTimestamped "The 'start-ish' functions created."
 ####################################################################
 ### Tools: `git`
 
-Write-DebugTimestamped "Defining 'git' related commands..."
-
 Set-Alias -Name g `
   -Value git
 
-function gst { git st }
-function glo { git lo }
-function gbr { git br }
-function gsw { git sw }
-function gdf { git df }
-function gco { git co }
-function grs { git rs }
-function gad { git ad }
-function gcm { git cm }
-function grc { git rc }
-function gcp { git cp }
-function gft { git ft }
-function gmg { git mg }
-function gpl { git pl }
-function gps { git ps }
-function gdt { git dt }
-function gmt { git mt }
+function gst { git st $args }
+function glo { git lo $args }
+function gbr { git br $args }
+function gsw { git sw $args }
+function gdf { git df $args }
+function gco { git co $args }
+function grs { git rs $args }
+function gad { git ad $args }
+function gcm { git cm $args }
+function grc { git rc $args }
+function gcp { git cp $args }
+function gft { git ft $args }
+function gmg { git mg $args }
+function gpl { git pl $args }
+function gps { git ps $args }
+function gdt { git dt $args }
+function gmt { git mt $args }
 
+Write-DebugTimestamped "The 'git' related aliases defined."
+
+
+####################################################################
 ### Setup 'posh-git' module
 
 Write-DebugTimestamped "Importing and configuring the 'posh-git' module..."
@@ -215,7 +312,7 @@ $GitPromptSettings.DefaultPromptBeforeSuffix.Text `
   = '`n$([DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss"))' `
   + ' $(__GitPosh_PromptErrorInfo)'
 
-Write-DebugTimestamped "Aliases and Prompt for 'git' created."
+Write-DebugTimestamped "Prompt for 'git' via 'posh-git' created."
 
 
 ####################################################################
@@ -223,7 +320,7 @@ Write-DebugTimestamped "Aliases and Prompt for 'git' created."
 
 Write-DebugTimestamped "Preparing 'oh-my-posh' with prompt theme..."
 
-if ($null -ne $env:WT_PROFILE_ID) {
+if (Find-ParentProcess "WindowsTerminal") {
   Import-Module oh-my-posh
   Set-PoshPrompt -Theme "powerlevel10k_rainbow"
 
@@ -243,11 +340,6 @@ Write-DebugTimestamped "Defining 'dotnet' related commands..."
 Set-Alias -Name dn `
   -Value dotnet
 
-function fsi {
-  Write-Verbose "Starting F# Interactive (REPL) via .NET..."
-  dotnet fsi $args
-}
-
 ### parameter completion shim for the dotnet CLI
 # https://docs.microsoft.com/en-us/dotnet/core/tools/enable-tab-autocomplete#powershell
 Register-ArgumentCompleter -Native -CommandName dotnet, dn -ScriptBlock {
@@ -255,6 +347,12 @@ Register-ArgumentCompleter -Native -CommandName dotnet, dn -ScriptBlock {
   dotnet complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
     [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
   }
+}
+
+function fsi {
+  Write-Verbose "Starting F# Interactive (REPL) via .NET..."
+  Write-DebugTimestamped "FSI given arguments:", $args
+  dotnet fsi $args
 }
 
 Write-DebugTimestamped "The 'dotnet' CLI arranged."
