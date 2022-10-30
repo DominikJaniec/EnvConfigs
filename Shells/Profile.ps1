@@ -231,6 +231,247 @@ Write-DebugTimestamped "Navigation commands toolkit prepared."
 
 
 ####################################################################
+### The `PSReadLine` Configuration
+
+# bash style completion without using Emacs mode:
+Set-PSReadLineKeyHandler -Key Tab -Function Complete
+
+# search history that matches the characters between the start and the input and the cursor
+Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
+Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
+
+# the source and style (PSReadLine 2.2.0) of predictive suggestions:
+Set-PSReadLineOption -PredictionSource History
+# Set-PSReadLineOption -PredictionViewStyle InlineView
+
+# select text in the output and command line to be captured into clipboard:
+Set-PSReadLineKeyHandler -Chord 'Ctrl+d,Ctrl+c' -Function CaptureScreen
+
+
+# replace all aliases on the command line with the resolved commands:
+# based on: https://github.com/PowerShell/PSReadLine/blob/b65141ef9e6112358ad24a5121d813c1e76da510/PSReadLine/SamplePSReadLineProfile.ps1#L440-L478
+Set-PSReadLineKeyHandler -Key "Alt+#" `
+  -LongDescription "Replace all aliases with the full command elements" `
+  -BriefDescription ExpandAliases `
+  -ScriptBlock {
+  param($key, $arg)
+
+  $ast = $null
+  $tokens = $null
+  $errors = $null
+  $cursor = $null
+  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$ast, [ref]$tokens, [ref]$errors, [ref]$cursor)
+
+  $tokenCommandName = [System.Management.Automation.Language.TokenFlags]::CommandName
+
+  $startAdjustment = 0
+  foreach ($token in $tokens) {
+    if ($token.TokenFlags -band $tokenCommandName) {
+      $extent = $token.Extent
+      $alias = $ExecutionContext.InvokeCommand.GetCommand(
+        $extent.Text,
+        'Alias')
+
+      if ($alias -ne $null) {
+        $resolvedCommand = $alias.ResolvedCommandName
+        if ($resolvedCommand -ne $null) {
+          $length = $extent.EndOffset - $extent.StartOffset
+          [Microsoft.PowerShell.PSConsoleReadLine]::Replace(
+            $extent.StartOffset + $startAdjustment,
+            $length,
+            $resolvedCommand)
+
+          # local copy of the tokens won't have been updated,
+          # so we need to adjust by the difference in length:
+          $startAdjustment += ($resolvedCommand.Length - $length)
+        }
+      }
+    }
+  }
+}
+
+
+# cycle through arguments on current line and select theirs' value,
+# use with digit argument, i.e. Alt+1, Alt+a selects the first:
+# based on: https://github.com/PowerShell/PSReadLine/blob/b65141ef9e6112358ad24a5121d813c1e76da510/PSReadLine/SamplePSReadLineProfile.ps1#L604-L658
+Set-PSReadLineKeyHandler -Key Alt+a `
+  -LongDescription "Select next command argument in the command line, use of digit argument selects by position" `
+  -BriefDescription SelectCommandArguments `
+  -ScriptBlock {
+  param($key, $arg)
+
+  # makes it easier to quickly change the argument if
+  # re-running a previously run command from the history,
+  # or when using a PSReadLine predictor to adjust quickly.
+
+  $ast = $null
+  $cursor = $null
+  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$ast, [ref]$null, [ref]$null, [ref]$cursor)
+
+  $asts = $ast.FindAll( {
+      $args[0] -is [System.Management.Automation.Language.ExpressionAst] `
+        -and $args[0].Parent -is [System.Management.Automation.Language.CommandAst] `
+        -and $args[0].Extent.StartOffset -ne $args[0].Parent.Extent.StartOffset
+    }, $true)
+
+  if ($asts.Count -eq 0) {
+    [Microsoft.PowerShell.PSConsoleReadLine]::Ding()
+    return
+  }
+
+  $nextAst = $null
+
+  if ($null -ne $arg) {
+    $nextAst = $asts[$arg - 1]
+  }
+  else {
+    foreach ($ast in $asts) {
+      if ($ast.Extent.StartOffset -ge $cursor) {
+        $nextAst = $ast
+        break
+      }
+    }
+
+    if ($null -eq $nextAst) {
+      $nextAst = $asts[0]
+    }
+  }
+
+  $startOffsetAdjustment = 0
+  $endOffsetAdjustment = 0
+
+  if ($nextAst -is [System.Management.Automation.Language.StringConstantExpressionAst] `
+      -and $nextAst.StringConstantType -ne [System.Management.Automation.Language.StringConstantType]::BareWord) {
+    $startOffsetAdjustment = 1
+    $endOffsetAdjustment = 2
+  }
+
+  $extent = $nextAst.Extent
+  [Microsoft.PowerShell.PSConsoleReadLine]::SetCursorPosition($extent.StartOffset + $startOffsetAdjustment)
+  [Microsoft.PowerShell.PSConsoleReadLine]::SetMark($null, $null)
+  [Microsoft.PowerShell.PSConsoleReadLine]::SelectForwardChar($null, ($extent.EndOffset - $extent.StartOffset) - $endOffsetAdjustment)
+}
+
+
+# store current command line in history without executing it:
+# based on: https://github.com/PowerShell/PSReadLine/blob/b65141ef9e6112358ad24a5121d813c1e76da510/PSReadLine/SamplePSReadLineProfile.ps1#L311-L326
+Set-PSReadLineKeyHandler -Key Alt+x `
+  -LongDescription "Save current line in history, but do not execute it" `
+  -BriefDescription SaveInHistory `
+  -ScriptBlock {
+  param($key, $arg)
+
+  # sometimes you enter a complicated and long command,
+  # but realize you forgot to do something else first...
+
+  $line = $null
+  $cursor = $null
+  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+  [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($line)
+
+  # clears the line (like with <Esc>), so the undo stack is reset.
+  # the redo <Ctrl+y> will still reconstruct the command line.
+  [Microsoft.PowerShell.PSConsoleReadLine]::RevertLine()
+}
+
+
+# use F1 for help window on the command line:
+# check out: https://learn.microsoft.com/en-us/powershell/scripting/learn/shell/dynamic-help?view=powershell-7.2
+# based on: https://github.com/PowerShell/PSReadLine/blob/b65141ef9e6112358ad24a5121d813c1e76da510/PSReadLine/SamplePSReadLineProfile.ps1#L480-L517
+Set-PSReadLineKeyHandler -Key F1 `
+  -LongDescription "Open the help window for the current command" `
+  -BriefDescription CommandHelp `
+  -ScriptBlock {
+  param($key, $arg)
+
+  $ast = $null
+  $tokens = $null
+  $errors = $null
+  $cursor = $null
+  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$ast, [ref]$tokens, [ref]$errors, [ref]$cursor)
+
+  $commandAst = $ast.FindAll( {
+      $node = $args[0]
+      $node -is [System.Management.Automation.Language.CommandAst] `
+        -and $node.Extent.StartOffset -le $cursor `
+        -and $node.Extent.EndOffset -ge $cursor
+    }, $true) `
+  | Select-Object -Last 1
+
+  if ($commandAst -ne $null) {
+    $commandName = $commandAst.GetCommandName()
+    if ($commandName -ne $null) {
+      $command = $ExecutionContext.InvokeCommand.GetCommand($commandName, 'All')
+      if ($command -is [System.Management.Automation.AliasInfo]) {
+        $commandName = $command.ResolvedCommandName
+      }
+
+      if ($commandName -ne $null) {
+        Get-Help $commandName -ShowWindow
+      }
+    }
+  }
+}
+
+
+# show filtered command history in Out-GridView window with multiselect (Ctrl+click):
+# based on: https://github.com/PowerShell/PSReadLine/blob/b65141ef9e6112358ad24a5121d813c1e76da510/PSReadLine/SamplePSReadLineProfile.ps1#L23-L78
+Set-PSReadLineKeyHandler -Key F7 `
+  -LongDescription 'Show command history filtered by current command line' `
+  -BriefDescription History `
+  -ScriptBlock {
+  $pattern = $null
+  $rawPattern = $null
+  $windowTitle = "History"
+
+  [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$rawPattern, [ref]$null)
+  if ($rawPattern) {
+    $pattern = [regex]::Escape($rawPattern)
+    $windowTitle = $windowTitle + " by ``$rawPattern``"
+  }
+
+  $history = [System.Collections.ArrayList]@(
+    $last = ''
+    $lines = ''
+    foreach ($line in [System.IO.File]::ReadLines((Get-PSReadLineOption).HistorySavePath)) {
+      if ($line.EndsWith('`')) {
+        $line = $line.Substring(0, $line.Length - 1)
+        $lines = $lines ? "$lines`n$line" : $line
+        continue
+      }
+
+      if ($lines) {
+        $line = "$lines`n$line"
+        $lines = ''
+      }
+
+      if (($line -cne $last) `
+          -and (!$pattern `
+            -or ($line -match $pattern))) {
+        $last = $line
+        $line
+      }
+    }
+  )
+  $history.Reverse()
+
+  $command = $history | Out-GridView -Title $windowTitle -PassThru
+  if ($command) {
+    [Microsoft.PowerShell.PSConsoleReadLine]::RevertLine()
+    [Microsoft.PowerShell.PSConsoleReadLine]::Insert(($command -join " ```n && "))
+  }
+}
+
+
+# find more:
+# - https://github.com/PowerShell/PSReadLine/blob/master/PSReadLine/SamplePSReadLineProfile.ps1
+# - https://learn.microsoft.com/en-us/powershell/module/psreadline/about/about_psreadline_functions
+# - https://learn.microsoft.com/en-us/powershell/module/psreadline/set-psreadlineoption
+
+Write-DebugTimestamped "Available 'PSReadLine' configured."
+
+
+####################################################################
 ### The `start-ish` Utility
 
 function start-wt ($subCommand) {
