@@ -4,11 +4,11 @@
 
 
 ####################################################################
-### Verbosity level
+#region Verbosity level
 
 ### Note: Uncomment one whichever you need ;)
-# $DebugPreference = "Continue"
-# $VerbosePreference = "Continue"
+$DebugPreference = "Continue"
+$VerbosePreference = "Continue"
 
 function Write-DebugTimestamped ($MessageLines) {
   $timestamp = Get-Date -Format yyyyMMdd-HH:mm:ss.fff
@@ -21,13 +21,33 @@ function Write-DebugTimestamped ($MessageLines) {
 Write-Verbose "Verbosity set to: $VerbosePreference"
 Write-DebugTimestamped "Debug verbosity set to: $DebugPreference"
 
+#endregion
 
 ####################################################################
-### Helpers
+#region Helpers
 
 function pair ($fst, $snd) {
-  return New-Object `
-    "Tuple[object,object]"($fst, $snd)
+  [PSCustomObject]@{
+    fst = $fst
+    snd = $snd
+  }
+}
+
+function triple ($fst, $snd, $trd) {
+  $x = pair $fst $snd
+  Add-Member -InputObject $x `
+    -MemberType NoteProperty `
+    -Name "trd" `
+    -Value $trd
+  return $x
+}
+
+function fst ($tuple) { $tuple.fst }
+function snd ($tuple) { $tuple.snd }
+function trd ($triple) { $triple.trd }
+
+function startWatch () {
+  [System.Diagnostics.Stopwatch]::StartNew()
 }
 
 function dump ($obj, $name = "Given object") {
@@ -69,9 +89,10 @@ function Resolve-PathOrPwd ($Path) {
 
 Write-DebugTimestamped "Common helpers for Profile.ps1 registered."
 
+#endregion
 
 ####################################################################
-### Environment
+#region Environment
 
 Set-Alias -Name exp `
   -Value explorer.exe
@@ -133,9 +154,10 @@ function ff ($uri) {
 
 Write-DebugTimestamped "Environment related commands defined."
 
+#endregion
 
 ####################################################################
-### Navigation and Exploration
+#region Navigation and Exploration
 
 function cd.. { Set-Location .. }
 function .. { Set-Location .. }
@@ -188,9 +210,11 @@ function l ($path, [switch]$a) {
   $source `
   | Sort-Object -Property Name `
   | ForEach-Object {
+    # Note: The 'Format-Wide' expects to get objects with
+    #       at least one "property", to display them
+    #       "correctly" within more than one column.
     $display = format $_
-    $mode = $_.Mode
-    return pair $display $mode
+    pair $display $null
   } `
   | Format-Wide
 }
@@ -229,9 +253,10 @@ function ula () {
 
 Write-DebugTimestamped "Navigation commands toolkit prepared."
 
+#endregion
 
 ####################################################################
-### The `PSReadLine` Configuration
+#region > UX `PSReadLine` Configuration
 
 # bash style completion without using Emacs mode:
 Set-PSReadLineKeyHandler -Key Tab -Function Complete
@@ -470,9 +495,127 @@ Set-PSReadLineKeyHandler -Key F7 `
 
 Write-DebugTimestamped "Available 'PSReadLine' configured."
 
+#endregion
 
 ####################################################################
-### The `start-ish` Utility
+#region > Shell's prompt Theme: `oh-my-posh`
+
+Write-DebugTimestamped "Preparing 'oh-my-posh' with prompt theme..."
+
+function Save-OhMyPoshFavorites($favorites) {
+  if ($null -eq $favorites) {
+    throw "Cannot set NULL as Oh-My-Posh favorites."
+  }
+
+  $key = "POSH_THEMES___FAVORITES"
+  $serialized = $favorites -join ":"
+  $options = [EnvironmentVariableTarget]::User
+  [Environment]::SetEnvironmentVariable($key, $serialized, $options)
+
+  Write-Verbose "Environment variable '$key' set as:`n`t$serialized"
+}
+
+function Get-OhMyPoshFavorites () {
+  $key = "POSH_THEMES___FAVORITES"
+  $options = [EnvironmentVariableTarget]::User
+  $value = [Environment]::GetEnvironmentVariable($key, $options)
+  Write-Verbose "Found favorite Oh-My-Posh configs:`n`t$value"
+
+  return $null -ne $value `
+    ? $value -split ":" `
+    : @()
+}
+
+function Remove-OhMyPoshFavorite($name = $null, [switch]$All) {
+  if ($All.IsPresent) {
+    Write-Verbose "Removing all Oh-My-Posh favorites"
+    Save-OhMyPoshFavorites @()
+    return
+  }
+
+  $configName = $name ?? $env:POSH_THEMES__CURRENT
+  Write-Verbose "Removing '$configName' from Oh-My-Posh favorites"
+
+  $favorites = @(Get-OhMyPoshFavorites) `
+  | Where-Object { $_ -ne $configName }
+
+  Save-OhMyPoshFavorites $favorites
+}
+
+function Set-OhMyPoshFavorite ($name = $null) {
+  $configName = $name ?? $env:POSH_THEMES__CURRENT
+  Write-Verbose "Setting '$configName' as Oh-My-Posh favorite"
+
+  $favorites = @(Get-OhMyPoshFavorites)
+  $favorites = $favorites + $configName `
+  | Select-Object -Unique
+
+  Save-OhMyPoshFavorites $favorites
+}
+
+function Set-OhMyPoshTheme ($name = $null, [switch]$FromFavorites, [switch]$UseRandom) {
+  if (-not $UseRandom.IsPresent -and $null -eq $name) {
+    throw "No Oh-My-Posh theme was provided. Use '-UseRandom' to skip `$name argument."
+  }
+
+  Write-Verbose "Looking for Oh-My-Posh Themes within:"
+  Write-Verbose "`t$env:POSH_THEMES_PATH"
+  $configExt = "omp.json"
+
+  function getRandomOhMyPoshConfig () {
+    $files = Get-ChildItem $env:POSH_THEMES_PATH -Filter "*.$configExt"
+    Write-Verbose "`t* Found $($files.Length) files"
+
+    if ($FromFavorites.IsPresent) {
+      $favorites = @(Get-OhMyPoshFavorites)
+      if ($favorites.Count -eq 0) {
+        throw "No Oh-My-Posh favorites was found. Use 'Set-OhMyPoshFavorite' to mark some themes as such."
+      }
+
+      $files = $files | Where-Object {
+        $favorites -contains $_.Name
+      }
+    }
+
+    return $files | ForEach-Object Name | Get-Random
+  }
+
+  $configName = "$name"
+  if (-not $configName.EndsWith(".$configExt")) {
+    $configName += ".$configExt"
+  }
+
+  if ($UseRandom.IsPresent) {
+    $configName = getRandomOhMyPoshConfig
+  }
+
+  Write-Host "Initializing Oh-My-Posh with config: '$configName'"
+  $configPath = Join-Path $env:POSH_THEMES_PATH $configName
+
+  if (-not (Test-Path $configPath)) {
+    throw "There is no config such: $configPath"
+  }
+
+  oh-my-posh init pwsh --config "$configPath" `
+  | Invoke-Expression
+
+  $env:POSH_THEMES__CURRENT = $configName
+}
+
+
+if (Find-ParentProcess "WindowsTerminal") {
+  Set-OhMyPoshTheme -UseRandom
+  Write-DebugTimestamped "Prompt with 'oh-my-posh' module loaded."
+}
+else {
+  Write-DebugTimestamped "The 'oh-my-posh' prompt setup skipped", `
+    " - not within Windows Terminal, only ASCII support expected."
+}
+
+#endregion
+
+####################################################################
+#region > The `start-ish` Utility
 
 function start-wt ($subCommand) {
   Write-Verbose "Launching Windows Terminal in current directory..."
@@ -497,9 +640,10 @@ function start-pwsh ($command) {
 
 Write-DebugTimestamped "The 'start-ish' functions created."
 
+#endregion
 
 ####################################################################
-### Tools: `git`
+#region > Tools: `git`
 
 Set-Alias -Name g `
   -Value git
@@ -524,57 +668,10 @@ function gmt { git mt $args }
 
 Write-DebugTimestamped "The 'git' related aliases defined."
 
+#endregion
 
 ####################################################################
-### Setup 'posh-git' module
-
-Write-DebugTimestamped "Importing and configuring the 'posh-git' module..."
-
-Import-Module posh-git
-
-function global:__GitPosh_PromptErrorInfo() {
-  if ($global:GitPromptValues.DollarQuestion) {
-    # green ok block:
-    return "`e[32m#`e[0m"
-  }
-
-  $err = "!"
-  if ($global:GitPromptValues.LastExitCode -ne 0) {
-    $err += " e:" + $global:GitPromptValues.LastExitCode
-  }
-
-  # red error code block:
-  return "`e[31m$err`e[0m"
-}
-
-# It is a template and we don't want string-substitution.
-# Thus, there should be that single-quoted string:
-$GitPromptSettings.DefaultPromptBeforeSuffix.Text `
-  = '`n$([DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss"))' `
-  + ' $(__GitPosh_PromptErrorInfo)'
-
-Write-DebugTimestamped "Prompt for 'git' via 'posh-git' created."
-
-
-####################################################################
-### Tools: `oh-my-posh`
-
-Write-DebugTimestamped "Preparing 'oh-my-posh' with prompt theme..."
-
-if (Find-ParentProcess "WindowsTerminal") {
-  Import-Module oh-my-posh
-  Set-PoshPrompt -Theme "powerlevel10k_rainbow"
-
-  Write-DebugTimestamped "Prompt with 'oh-my-posh' module loaded."
-}
-else {
-  Write-DebugTimestamped "The 'oh-my-posh' prompt setup skipped", `
-    " - not within Windows Terminal, only ASCII support expected."
-}
-
-
-####################################################################
-### Tools: `dotnet`
+#region > Tools: `dotnet`
 
 Write-DebugTimestamped "Defining 'dotnet' related commands..."
 
@@ -598,9 +695,11 @@ function fsi {
 
 Write-DebugTimestamped "The 'dotnet' CLI arranged."
 
+#endregion
 
 ####################################################################
-### Tools: `fake`
+#region > Tools: `fake`
+
 # TODO:
 # * don't close window after fake-it
 
@@ -656,5 +755,4 @@ function fake-it-here ($target) {
 
 Write-DebugTimestamped "The 'fake' build-tool qualified."
 
-
-####################################################################
+#endregion
