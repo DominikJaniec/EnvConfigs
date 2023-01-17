@@ -3,23 +3,49 @@
 ####################################################################
 
 
-####################################################################
-#region Verbosity level
+$__execution_stopwatch_ = `
+  [System.Diagnostics.Stopwatch]::StartNew()
+
+$__execution_timestamp_ = Get-Date -AsUTC
 
 ### Note: Uncomment one whichever you need ;)
-$DebugPreference = "Continue"
-$VerbosePreference = "Continue"
+# $DebugPreference = "Continue"
+# $VerbosePreference = "Continue"
+
+Write-Debug "Profile.ps1 starting at: $($__execution_timestamp_.ToLocalTime().ToString("dddd, 1yyyy-MM-dd HH:mm:ss.fff (zzz)"))"
 
 
-function Write-VerboseDated ($MessageLines) {
-  $timestamp = Get-Date -Format HH:mm:ss.fff
-  $lines = @() + $MessageLines
-  Write-Verbose "$timestamp| $($lines[0])"
-  $lines | Select-Object -Skip 1 `
-  | ForEach-Object { Write-Verbose "`t$_" }
+####################################################################
+#region Execution Context and Log Writers
+
+$__execution_ctx = @{
+  watch           = $__execution_stopwatch_
+  timestamp       = $__execution_timestamp_
+  writeOnEvent    = $true
+  writeOnExit     = $false
+  absorbChildren  = $true
+  includeExamples = $false
 }
 
-Write-Debug "Debug verbosity set to: $DebugPreference"
+function Write-DebugElapsed ($Message, $ms = $null) {
+  $ms ??= $__execution_ctx.watch.ElapsedMilliseconds
+  $ms = "$ms".PadLeft(14)
+
+  Write-Debug "$ms| $Message"
+}
+
+function Write-VerboseDated ($MessageLines) {
+  $lines = @() + $MessageLines
+
+  $indent = "$(Get-Date -Format HH:mm:ss.fff)| "
+  Write-Verbose $($indent + $lines[0])
+
+  $indent = "            | `t"
+  $lines | Select-Object -Skip 1 `
+  | ForEach-Object { Write-Verbose $($indent + $_) }
+}
+
+Write-DebugElapsed "Debug verbosity set to: $DebugPreference"
 Write-VerboseDated "Verbosity set to: $VerbosePreference"
 
 #endregion
@@ -28,7 +54,7 @@ Write-VerboseDated "Verbosity set to: $VerbosePreference"
 ####################################################################
 #region Helpers
 
-function getTimestamp () {
+function timestampMark () {
   Get-Date -Format yyyyMMdd-HH:mm:ss.fff -AsUTC
 }
 
@@ -56,6 +82,10 @@ function startWatch () {
   [System.Diagnostics.Stopwatch]::StartNew()
 }
 
+function stringLine($char, $length = 69) {
+  [string]::new($char, $length)
+}
+
 function dump ($obj, $name = "Given object") {
   if ($null -eq $obj) {
     Write-Host "===// Dump '$name' as just the NULL ===\\"
@@ -65,6 +95,282 @@ function dump ($obj, $name = "Given object") {
     Write-Host ($obj | Format-Table | Out-String) -NoNewline
     Write-Host "===\\"
   }
+}
+
+#endregion
+
+
+####################################################################
+#region Profiler capabilities
+
+if ($DebugPreference -ne "Continue") {
+  $__execution_ctx.writeOnEvent = $false
+  $__execution_ctx.writeOnExit = $false
+  $__execution_ctx.includeExamples = $false
+}
+
+$__execution_ctx.name = "//Profile.ps1"
+$__execution_ctx.events = @()
+$__execution_ctx.scopes = @()
+$__execution_ctx.level = 0
+
+
+function __logEvent ($eventMsg, $watch = $null) {
+  function depthMarker ($depth) {
+    Switch ($depth) {
+      1 { ":" }
+      2 { ">" }
+      3 { ")" }
+      4 { "}" }
+      5 { "]" }
+      Default { "|" }
+    }
+  }
+
+  function scopePrefix ($scope, $depth) {
+    $indent = stringLine " " $(2 * $depth)
+    $scopeMark = depthMarker $depth
+
+    $name = fst $scope
+    $indent + $name + $scopeMark
+  }
+
+  $watch ??= $__execution_ctx.watch
+  $eventMs = $watch.ElapsedMilliseconds
+
+  $scope = $__execution_ctx.scopes[-1]
+  if ($null -ne $scope) {
+    $depth = $__execution_ctx.scopes.Count
+    $prefix = scopePrefix $scope $depth
+    $eventMsg = "$prefix $eventMsg"
+  }
+
+  $levelMark = depthMarker $__execution_ctx.level
+  $nextEvent = pair "$levelMark  $eventMsg" $eventMs
+  $__execution_ctx.events += $nextEvent
+
+  if ($__execution_ctx.writeOnEvent) {
+    Write-DebugElapsed $eventMsg $ms
+  }
+}
+
+function __logScopePush ($scopeName) {
+  __logEvent "Pushing execution scope '$scopeName'"
+  $scope = pair "$scopeName" $(startWatch)
+  $__execution_ctx.scopes += $scope
+}
+
+function __logScopePop () {
+  $count = $__execution_ctx.scopes.Count
+  $scope = $__execution_ctx.scopes[-1]
+  if ($count -eq 0 -or $null -eq $scope) {
+    throw "Popped not existing Log Scope"
+  }
+
+  $elapsed = (snd $scope).ElapsedMilliseconds
+  __logEvent "Scope finished within $elapsed ms"
+
+  Switch ($count) {
+    1 { $__execution_ctx.scopes = @() }
+    Default {
+      $lastIndex = $count - 1
+      $end = $lastIndex - 1
+      $__execution_ctx.scopes = `
+        $__execution_ctx.scopes[0..$end]
+    }
+  }
+}
+
+function __logScopeAs ($scopeName, $ScriptBlock) {
+  __logScopePush $scopeName
+  Invoke-Command $ScriptBlock
+  __logScopePop
+}
+
+function __logShowAllEvents_WriteHost () {
+  $elapsedMs = $__execution_ctx.watch.ElapsedMilliseconds
+  $length = $__execution_ctx.events.Count
+
+  function logShowEvent ($msg) {
+    __logEvent ("__logShowAllEvents_WriteHost: $msg")
+    return $__execution_ctx.events[-1]
+  }
+
+  logShowEvent "starting" | Out-Null
+
+  function outEvents ($indent) {
+    function strSize ($num) {
+      [Math]::Ceiling([Math]::Log10($num + 0.1))
+    }
+
+    function toRight ($size, $num) {
+      $num.ToString().PadLeft($size)
+    }
+
+    $events = $__execution_ctx.events
+
+    $idxPadding = strSize ($length + 2)
+    $msPadding = strSize (snd $events[-1])
+    $msPadding += 1
+
+    function outEventEntry ($i, $eventEntry) {
+      $idx = toRight $idxPadding $i
+
+      $ms = snd $eventEntry
+      $ms = toRight $msPadding $ms
+
+      $line = fst $eventEntry
+      Write-Output "$indent$idx.  $ms ms $line"
+    }
+
+    function makeShowEntry ($message) {
+      $eventMs = $__execution_ctx.watch.ElapsedMilliseconds
+      return pair (prefixed $message) $eventMs
+    }
+
+    Write-Output "got $length events registered within $elapsedMs ms"
+
+    $i = 0
+    $iteratingEntry = "not-set :/"
+    $events | ForEach-Object {
+      if ($i -eq 0) {
+        $iteratingEntry = logShowEvent "iterating"
+      }
+
+      $i += 1
+      outEventEntry $i $_
+    }
+
+    outEventEntry ($i + 1) $iteratingEntry
+    outEventEntry ($i + 2) (logShowEvent "output done")
+  }
+
+  Write-Host "### $(stringLine "#" -length 42)"
+  Write-Host "### Execution log of '$($__execution_ctx.name)':"
+  Write-Host "  * timestamp -> $($__execution_ctx.timestamp.ToString("o"))"
+  Write-Host "  * watch -> $($__execution_ctx.watch.ElapsedMilliseconds) ms"
+  Write-Host "  * events -> $($(outEvents "      ") -join "`n")"
+
+  logShowEvent "all events shown" | Out-Null
+}
+
+function __logContext ($contextName, $ScriptBlock) {
+  $ctxName = "[ctx] $contextName"
+  __logScopePush $ctxName
+
+  $parentCtx = $__execution_ctx.Clone()
+  try {
+    $__execution_ctx.name = $contextName
+    $__execution_ctx.events = @()
+    $__execution_ctx.scopes = @()
+    $__execution_ctx.level += 1
+
+    $__execution_ctx.timestamp = Get-Date -AsUTC
+    $__execution_ctx.watch = $(startWatch)
+    __logEvent "___ $(stringLine "_")"
+    __logEvent "--- Starting '$ctxName'..."
+    Invoke-Command $ScriptBlock
+
+    $elapsed = $__execution_ctx.watch.ElapsedMilliseconds
+    __logEvent "--- '$ctxName' done within $elapsed ms"
+    __logEvent "--- $(stringLine "=")"
+
+    if ($__execution_ctx.absorbChildren) {
+      $children = $__execution_ctx.events
+      __logEvent "absorbing $($children.Count) child events"
+      $parentCtx.events += $children
+    }
+
+    if ($__execution_ctx.writeOnExit) {
+      __logShowAllEvents_WriteHost
+    }
+  }
+  finally {
+    $global:__execution_ctx = $parentCtx
+    __logScopePop
+  }
+}
+
+function __logContext_writeOnEvent ($value) {
+  $__execution_ctx.writeOnEvent = $value
+}
+function __logContext_writeOnExit ($value) {
+  $__execution_ctx.writeOnExit = $value
+}
+function __logContext_writeSetDefaults () {
+  __logContext_writeOnEvent $false
+  __logContext_writeOnExit $true
+}
+
+__logEvent "Log framework defined."
+
+
+if ($__execution_ctx.includeExamples) {
+  __logEvent "self-test: consecutive log"
+  __logEvent "self-test: consecutive log"
+  __logEvent "self-test: consecutive log"
+  __logEvent "self-test: consecutive log"
+  __logEvent "self-test: consecutive log"
+  __logEvent "self-test: consecutive log"
+  __logEvent "self-test: consecutive log"
+  __logEvent "self-test: consecutive log"
+  __logEvent "self-test: consecutive log"
+  __logEvent "self-test: consecutive log"
+  __logEvent "self-test: eleventh msg"
+  __logScopePush "outer_scope 1"
+  __logEvent "in 1: message 1st"
+  __logEvent "in 1: message 2nd"
+  __logEvent "in 1: message 3rd"
+  __logScopePush "inner_scope A"
+  __logEvent "A: consecutive log i"
+  __logEvent "A: consecutive log ii"
+  __logScopePop
+  __logEvent "???: outer_scope"
+  __logScopePop
+  __logEvent "???: after"
+  __logEvent "top: under script blocks"
+  __logScopeAs "fst-blocks" {
+    __logEvent "fst: a message"
+    __logEvent "fst: other message"
+    __logScopeAs "inner-block" {
+      __logEvent "snd: msg"
+      __logScopeAs "time" { Get-Date | Out-Null }
+      __logEvent "???: after time"
+    }
+    __logEvent "???: after inner"
+  }
+  __logEvent "???: block-scopes"
+  __logEvent "looks nice in out scopes"
+  __logContext "embedable contexts" {
+    __logContext_writeOnEvent $true
+    __logContext_writeOnExit $false
+    __logEvent "first embedded message"
+    __logScopePush "embedded scope"
+    __logEvent "deeper (2nd) event message"
+    __logScopeAs "other embedded scope" {
+      __logEvent "third level with deep context"
+      __logScopePush "over deeper context"
+      __logContext "deeper context" {
+        __logContext_writeSetDefaults
+        __logEvent "deeper embedded event"
+        __logScopeAs "scoped task" {
+          $items = Get-ChildItem -Path "."
+          __logEvent "Found $($items.Count) within:"
+          __logEvent $PWD
+        }
+        __logEvent "embedded and deep context ends"
+      }
+      __logEvent "outside of deeper context"
+      __logScopePop
+      __logEvent "ended over scope"
+    }
+    __logEvent "ending embedded scope"
+    __logScopePop
+    __logEvent "restoring `"global`" context"
+  }
+  __logEvent "showing all entries"
+  __logShowAllEvents_WriteHost
+  __logEvent "contexts demo finished"
 }
 
 Write-VerboseDated "Common helpers for Profile.ps1 registered."
@@ -80,7 +386,6 @@ Set-Alias -Name exp `
 
 Set-Alias -Name cmds `
   -Value Get-Command
-
 
 function Get-Environment {
   Get-ChildItem Env:
@@ -267,6 +572,7 @@ Write-VerboseDated "Navigation commands toolkit prepared."
 
 ####################################################################
 #region > UX `PSReadLine` Configuration
+__logScopePush "PSReadLine"
 
 # bash style completion without using Emacs mode:
 Set-PSReadLineKeyHandler -Key Tab -Function Complete
@@ -504,6 +810,7 @@ Set-PSReadLineKeyHandler -Key F7 `
 # - https://learn.microsoft.com/en-us/powershell/module/psreadline/set-psreadlineoption
 
 Write-VerboseDated "Available 'PSReadLine' configured."
+__logScopePop
 
 #endregion
 
@@ -511,6 +818,7 @@ Write-VerboseDated "Available 'PSReadLine' configured."
 ####################################################################
 #region > Shell's prompt Theme: `Oh-My-Posh`
 
+__logScopePush "Oh-My-Posh"
 Write-VerboseDated "Preparing 'Oh-My-Posh' with prompt theme..."
 
 function Save-OhMyPoshFavorites($favorites) {
@@ -600,11 +908,11 @@ function Set-OhMyPoshTheme ($name = $null, [switch]$FromFavorites, [switch]$UseR
     $configName = getRandomOhMyPoshConfig
   }
 
-  Write-Host "Initializing Oh-My-Posh with config: '$configName'"
+  Write-Host "Oh-My-Posh initializing with: '$configName'"
   $configPath = Join-Path $env:POSH_THEMES_PATH $configName
 
   if (-not (Test-Path $configPath)) {
-    throw "There is no config such: $configPath"
+    throw "There is no config such: '$configPath'"
   }
 
   oh-my-posh init pwsh --config "$configPath" `
@@ -613,15 +921,21 @@ function Set-OhMyPoshTheme ($name = $null, [switch]$FromFavorites, [switch]$UseR
   $env:POSH_THEMES__CURRENT = $configName
 }
 
+__logEvent "Extension methods defined."
+
 
 if (Find-ParentProcess "WindowsTerminal") {
   Set-OhMyPoshTheme -UseRandom
-  Write-VerboseDated "Prompt with 'oh-my-posh' module loaded."
+  Write-VerboseDated "Prompt vai Oh-My-Posh module loaded."
 }
 else {
-  Write-VerboseDated "The 'oh-my-posh' prompt setup skipped", `
-    " - not within Windows Terminal, only ASCII support expected."
+  Write-VerboseDated "Oh-My-Posh prompt skipped", `
+    " - not within Windows Terminal,", `
+    " - only ASCII support expected."
 }
+
+
+__logScopePop
 
 #endregion
 
@@ -771,3 +1085,6 @@ function fake-it-here ($target) {
 Write-VerboseDated "The 'fake' build-tool qualified."
 
 #endregion
+
+
+Write-Host "Domin's personal Profile.ps1 executed within $($__execution_stopwatch_.ElapsedMilliseconds) ms."
