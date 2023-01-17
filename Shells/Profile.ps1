@@ -10,21 +10,27 @@
 $DebugPreference = "Continue"
 $VerbosePreference = "Continue"
 
-function Write-DebugTimestamped ($MessageLines) {
-  $timestamp = Get-Date -Format yyyyMMdd-HH:mm:ss.fff
+
+function Write-VerboseDated ($MessageLines) {
+  $timestamp = Get-Date -Format HH:mm:ss.fff
   $lines = @() + $MessageLines
-  Write-Debug "$timestamp| $($lines[0])"
+  Write-Verbose "$timestamp| $($lines[0])"
   $lines | Select-Object -Skip 1 `
-  | ForEach-Object { Write-Debug "`t$_" }
+  | ForEach-Object { Write-Verbose "`t$_" }
 }
 
-Write-Verbose "Verbosity set to: $VerbosePreference"
-Write-DebugTimestamped "Debug verbosity set to: $DebugPreference"
+Write-Debug "Debug verbosity set to: $DebugPreference"
+Write-VerboseDated "Verbosity set to: $VerbosePreference"
 
 #endregion
 
+
 ####################################################################
 #region Helpers
+
+function getTimestamp () {
+  Get-Date -Format yyyyMMdd-HH:mm:ss.fff -AsUTC
+}
 
 function pair ($fst, $snd) {
   [PSCustomObject]@{
@@ -61,35 +67,10 @@ function dump ($obj, $name = "Given object") {
   }
 }
 
-function Find-ParentProcess ($ParentName, $BasePID = $PID) {
-  function procBy ($id) {
-    return Get-Process -Id $id
-  }
-
-  $process = procBy $BasePID
-  while ($null -ne $process) {
-    if (-not $process.Parent) {
-      return $null
-    }
-
-    $process = procBy $process.Parent.Id
-    if ($ParentName -eq $process.Name) {
-      return $process
-    }
-  }
-
-  return $null
-}
-
-function Resolve-PathOrPwd ($Path) {
-  return ($null -eq $path) `
-    ? (Get-Location) `
-    : (Resolve-Path $path)
-}
-
-Write-DebugTimestamped "Common helpers for Profile.ps1 registered."
+Write-VerboseDated "Common helpers for Profile.ps1 registered."
 
 #endregion
+
 
 ####################################################################
 #region Environment
@@ -107,6 +88,12 @@ function Get-Environment {
 
 function Get-EnvironmentPath {
   $Env:Path -split ";"
+}
+
+function Resolve-PathOrPwd ($Path) {
+  return ($null -eq $path) `
+    ? (Get-Location) `
+    : (Resolve-Path $path)
 }
 
 Set-Alias -Name list-env `
@@ -137,6 +124,27 @@ Set-Alias -Name alias-of `
   -Value Get-AliasForCmdlet
 
 
+function Find-ParentProcess ($ParentName, $BasePID = $PID) {
+  function procBy ($id) {
+    return Get-Process -Id $id
+  }
+
+  $process = procBy $BasePID
+  while ($null -ne $process) {
+    if (-not $process.Parent) {
+      return $null
+    }
+
+    $process = procBy $process.Parent.Id
+    if ($ParentName -eq $process.Name) {
+      return $process
+    }
+  }
+
+  return $null
+}
+
+
 function ff ($uri) {
   $firefox = "C:\Program Files\Mozilla Firefox\firefox.exe"
   if (-not (Test-Path $firefox)) {
@@ -152,9 +160,10 @@ function ff ($uri) {
   & $firefox $uri
 }
 
-Write-DebugTimestamped "Environment related commands defined."
+Write-VerboseDated "Environment related commands defined."
 
 #endregion
+
 
 ####################################################################
 #region Navigation and Exploration
@@ -251,9 +260,10 @@ function ula () {
   u && l -a
 }
 
-Write-DebugTimestamped "Navigation commands toolkit prepared."
+Write-VerboseDated "Navigation commands toolkit prepared."
 
 #endregion
+
 
 ####################################################################
 #region > UX `PSReadLine` Configuration
@@ -493,14 +503,15 @@ Set-PSReadLineKeyHandler -Key F7 `
 # - https://learn.microsoft.com/en-us/powershell/module/psreadline/about/about_psreadline_functions
 # - https://learn.microsoft.com/en-us/powershell/module/psreadline/set-psreadlineoption
 
-Write-DebugTimestamped "Available 'PSReadLine' configured."
+Write-VerboseDated "Available 'PSReadLine' configured."
 
 #endregion
 
-####################################################################
-#region > Shell's prompt Theme: `oh-my-posh`
 
-Write-DebugTimestamped "Preparing 'oh-my-posh' with prompt theme..."
+####################################################################
+#region > Shell's prompt Theme: `Oh-My-Posh`
+
+Write-VerboseDated "Preparing 'Oh-My-Posh' with prompt theme..."
 
 function Save-OhMyPoshFavorites($favorites) {
   if ($null -eq $favorites) {
@@ -605,14 +616,15 @@ function Set-OhMyPoshTheme ($name = $null, [switch]$FromFavorites, [switch]$UseR
 
 if (Find-ParentProcess "WindowsTerminal") {
   Set-OhMyPoshTheme -UseRandom
-  Write-DebugTimestamped "Prompt with 'oh-my-posh' module loaded."
+  Write-VerboseDated "Prompt with 'oh-my-posh' module loaded."
 }
 else {
-  Write-DebugTimestamped "The 'oh-my-posh' prompt setup skipped", `
+  Write-VerboseDated "The 'oh-my-posh' prompt setup skipped", `
     " - not within Windows Terminal, only ASCII support expected."
 }
 
 #endregion
+
 
 ####################################################################
 #region > The `start-ish` Utility
@@ -638,9 +650,10 @@ function start-pwsh ($command) {
   start-wt "pwsh -NoExit $cmd"
 }
 
-Write-DebugTimestamped "The 'start-ish' functions created."
+Write-VerboseDated "The 'start-ish' functions created."
 
 #endregion
+
 
 ####################################################################
 #region > Tools: `git`
@@ -666,14 +679,15 @@ function gps { git ps $args }
 function gdt { git dt $args }
 function gmt { git mt $args }
 
-Write-DebugTimestamped "The 'git' related aliases defined."
+Write-VerboseDated "The 'git' related aliases defined."
 
 #endregion
+
 
 ####################################################################
 #region > Tools: `dotnet`
 
-Write-DebugTimestamped "Defining 'dotnet' related commands..."
+Write-VerboseDated "Defining 'dotnet' related commands..."
 
 Set-Alias -Name dn `
   -Value dotnet
@@ -689,13 +703,14 @@ Register-ArgumentCompleter -Native -CommandName dotnet, dn -ScriptBlock {
 
 function fsi {
   Write-Verbose "Starting F# Interactive (REPL) via .NET..."
-  Write-DebugTimestamped "FSI given arguments:", $args
+  Write-VerboseDated "FSI given arguments:", $args
   dotnet fsi $args
 }
 
-Write-DebugTimestamped "The 'dotnet' CLI arranged."
+Write-VerboseDated "The 'dotnet' CLI arranged."
 
 #endregion
+
 
 ####################################################################
 #region > Tools: `fake`
@@ -703,7 +718,7 @@ Write-DebugTimestamped "The 'dotnet' CLI arranged."
 # TODO:
 # * don't close window after fake-it
 
-Write-DebugTimestamped "Defining 'fake' related commands..."
+Write-VerboseDated "Defining 'fake' related commands..."
 
 function __fake-it-can_here ($ScriptBlock) {
   $fakeFile = "build.fsx"
@@ -753,6 +768,6 @@ function fake-it-here ($target) {
   }
 }
 
-Write-DebugTimestamped "The 'fake' build-tool qualified."
+Write-VerboseDated "The 'fake' build-tool qualified."
 
 #endregion
