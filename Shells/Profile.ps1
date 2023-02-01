@@ -2,57 +2,60 @@
 ###      Domin's  PowerShell 7 profile's configuration file      ###
 ####################################################################
 
-
 $__execution_stopwatch_ = `
   [System.Diagnostics.Stopwatch]::StartNew()
 
 $__execution_timestamp_ = Get-Date -AsUTC
 
 ### Note: Uncomment one whichever you need ;)
+# $Env:__PROFILER_SetDebugVerbose = $true
+# $Env:__PROFILER_WriteOn_LogEvent = $true
+# $Env:__PROFILER_WithExamples = $true
 # $DebugPreference = "Continue"
 # $VerbosePreference = "Continue"
 
+
+$__PROFILER_SetDebugVerbose = `
+  $Env:__PROFILER_SetDebugVerbose -eq $true `
+  -or $__PROFILER_SetDebugVerbose.IsPresent
+
+$__PROFILER_WriteOn_LogEvent = `
+  $Env:__PROFILER_WriteOn_LogEvent -eq $true `
+  -or $__PROFILER_WriteOn_LogEvent.IsPresent
+
+$__PROFILER_WithExamples = `
+  $Env:__PROFILER_WithExamples -eq $true `
+  -or $__PROFILER_WithExamples.IsPresent
+
+if ($__PROFILER_SetDebugVerbose -eq $true) {
+  $DebugPreference = "Continue"
+  $VerbosePreference = "Continue"
+}
+
 Write-Debug "Profile.ps1 starting at: $($__execution_timestamp_.ToLocalTime().ToString("dddd, 1yyyy-MM-dd HH:mm:ss.fff (zzz)"))"
 
-
-####################################################################
-#region Execution Context and Log Writers
-
 $__execution_ctx = @{
-  watch           = $__execution_stopwatch_
-  timestamp       = $__execution_timestamp_
-  writeOnEvent    = $true
-  writeOnExit     = $false
-  absorbChildren  = $true
-  includeExamples = $false
+  watch          = $__execution_stopwatch_
+  timestamp      = $__execution_timestamp_
+  absorbChildren = $true
+  writeOnEvent   = $__PROFILER_WriteOn_LogEvent -eq $true
+  writeOnExit    = $false
 }
 
-function Write-DebugElapsed ($Message, $ms = $null) {
-  $ms ??= $__execution_ctx.watch.ElapsedMilliseconds
-  $ms = "$ms".PadLeft(14)
-
-  Write-Debug "$ms| $Message"
-}
-
-function Write-VerboseDated ($MessageLines) {
-  $lines = @() + $MessageLines
-
-  $indent = "$(Get-Date -Format HH:mm:ss.fff)| "
-  Write-Verbose $($indent + $lines[0])
-
-  $indent = "            | `t"
-  $lines | Select-Object -Skip 1 `
-  | ForEach-Object { Write-Verbose $($indent + $_) }
-}
-
-Write-DebugElapsed "Debug verbosity set to: $DebugPreference"
-Write-VerboseDated "Verbosity set to: $VerbosePreference"
-
-#endregion
+Write-Debug "`$__PROFILER_SetDebugVerbose => $($__PROFILER_SetDebugVerbose)"
+Write-Debug "`$__PROFILER_WriteOn_LogEvent => $($__execution_ctx.writeOnEvent)"
 
 
 ####################################################################
 #region Helpers
+
+function startWatch () {
+  [System.Diagnostics.Stopwatch]::StartNew()
+}
+
+function stringLine($char, $length = 69) {
+  [string]::new($char, $length)
+}
 
 function timestampMark () {
   Get-Date -Format yyyyMMdd-HH:mm:ss.fff -AsUTC
@@ -78,13 +81,6 @@ function fst ($tuple) { $tuple.fst }
 function snd ($tuple) { $tuple.snd }
 function trd ($triple) { $triple.trd }
 
-function startWatch () {
-  [System.Diagnostics.Stopwatch]::StartNew()
-}
-
-function stringLine($char, $length = 69) {
-  [string]::new($char, $length)
-}
 
 function dump ($obj, $name = "Given object") {
   if ($null -eq $obj) {
@@ -101,12 +97,60 @@ function dump ($obj, $name = "Given object") {
 
 
 ####################################################################
+#region Execution Log Writers
+
+function Write-Prefixed ($Message, $prefix, [ScriptBlock]$writer) {
+  function prefixedWrite ($prefix, $txt) {
+    Invoke-Command -ScriptBlock $writer `
+      -ArgumentList ($prefix + $txt)
+  }
+
+  if ($Message -is [array]) {
+    prefixedWrite $prefix $Message[0]
+
+    $prefix = stringLine " " $prefix.Length
+    $Message | Select-Object -Skip 1 `
+    | ForEach-Object {
+      prefixedWrite $prefix $_
+    }
+  }
+  else {
+    prefixedWrite $prefix $Message
+  }
+}
+
+function Write-DebugElapsed ($Message, $ms = $null) {
+  $ms ??= $__execution_ctx.watch.ElapsedMilliseconds
+  $ms = "$ms ".PadLeft(15)
+
+  Write-Prefixed $Message $ms {
+    param($txt)
+    Write-Debug $txt
+  }
+}
+
+function Write-VerboseDated ($Message) {
+  $mark = "$(Get-Date -Format HH:mm:ss.fff) "
+
+  Write-Prefixed $Message $mark {
+    param($txt)
+    Write-Verbose $txt
+  }
+}
+
+Write-DebugElapsed "Debug verbosity set to: $DebugPreference"
+Write-VerboseDated "Verbosity set to: $VerbosePreference"
+
+#endregion
+
+
+####################################################################
 #region Profiler capabilities
 
 if ($DebugPreference -ne "Continue") {
+  Write-Verbose "Disabling Log Event Writers"
   $__execution_ctx.writeOnEvent = $false
   $__execution_ctx.writeOnExit = $false
-  $__execution_ctx.includeExamples = $false
 }
 
 $__execution_ctx.name = "//Profile.ps1"
@@ -114,8 +158,7 @@ $__execution_ctx.events = @()
 $__execution_ctx.scopes = @()
 $__execution_ctx.level = 0
 
-
-function __logEvent ($eventMsg, $watch = $null) {
+function __logEvent ($eventMsg) {
   function depthMarker ($depth) {
     Switch ($depth) {
       1 { ":" }
@@ -127,30 +170,48 @@ function __logEvent ($eventMsg, $watch = $null) {
     }
   }
 
-  function scopePrefix ($scope, $depth) {
+  function scopePrefix ($name, $depth) {
     $indent = stringLine " " $(2 * $depth)
     $scopeMark = depthMarker $depth
-
-    $name = fst $scope
     $indent + $name + $scopeMark
   }
 
-  $watch ??= $__execution_ctx.watch
-  $eventMs = $watch.ElapsedMilliseconds
+  function getEventMessageLines () {
+    $prefix = ""
+    $scopeName = ""
+    $scopeDepth = $__execution_ctx.scopes.Count
+    $ctxMark = depthMarker $__execution_ctx.level
 
-  $scope = $__execution_ctx.scopes[-1]
-  if ($null -ne $scope) {
-    $depth = $__execution_ctx.scopes.Count
-    $prefix = scopePrefix $scope $depth
-    $eventMsg = "$prefix $eventMsg"
+    if ($scopeDepth -gt 0) {
+      $scope = $__execution_ctx.scopes[-1]
+      if ($null -ne $scope) {
+        $scopeName = fst $scope
+        $prefix = scopePrefix $scopeName $scopeDepth
+      }
+    }
+
+    $firstLine = $true
+    @($eventMsg) | ForEach-Object {
+      $msg = "$ctxMark$prefix $_"
+      if ($firstLine) {
+        $fill = stringLine " " $scopeName.Length
+        $prefix = scopePrefix $fill $scopeDepth
+        $firstLine = $false
+      }
+
+      Write-Output $msg
+    }
   }
 
-  $levelMark = depthMarker $__execution_ctx.level
-  $nextEvent = pair "$levelMark  $eventMsg" $eventMs
+  $watch = $__execution_ctx.watch
+  $eventMs = $watch.ElapsedMilliseconds
+
+  $eventMsg = $(getEventMessageLines)
+  $nextEvent = pair $eventMsg $eventMs
   $__execution_ctx.events += $nextEvent
 
   if ($__execution_ctx.writeOnEvent) {
-    Write-DebugElapsed $eventMsg $ms
+    Write-DebugElapsed $eventMsg $eventMs
   }
 }
 
@@ -185,73 +246,6 @@ function __logScopeAs ($scopeName, $ScriptBlock) {
   __logScopePush $scopeName
   Invoke-Command $ScriptBlock
   __logScopePop
-}
-
-function __logShowAllEvents_WriteHost () {
-  $elapsedMs = $__execution_ctx.watch.ElapsedMilliseconds
-  $length = $__execution_ctx.events.Count
-
-  function logShowEvent ($msg) {
-    __logEvent ("__logShowAllEvents_WriteHost: $msg")
-    return $__execution_ctx.events[-1]
-  }
-
-  logShowEvent "starting" | Out-Null
-
-  function outEvents ($indent) {
-    function strSize ($num) {
-      [Math]::Ceiling([Math]::Log10($num + 0.1))
-    }
-
-    function toRight ($size, $num) {
-      $num.ToString().PadLeft($size)
-    }
-
-    $events = $__execution_ctx.events
-
-    $idxPadding = strSize ($length + 2)
-    $msPadding = strSize (snd $events[-1])
-    $msPadding += 1
-
-    function outEventEntry ($i, $eventEntry) {
-      $idx = toRight $idxPadding $i
-
-      $ms = snd $eventEntry
-      $ms = toRight $msPadding $ms
-
-      $line = fst $eventEntry
-      Write-Output "$indent$idx.  $ms ms $line"
-    }
-
-    function makeShowEntry ($message) {
-      $eventMs = $__execution_ctx.watch.ElapsedMilliseconds
-      return pair (prefixed $message) $eventMs
-    }
-
-    Write-Output "got $length events registered within $elapsedMs ms"
-
-    $i = 0
-    $iteratingEntry = "not-set :/"
-    $events | ForEach-Object {
-      if ($i -eq 0) {
-        $iteratingEntry = logShowEvent "iterating"
-      }
-
-      $i += 1
-      outEventEntry $i $_
-    }
-
-    outEventEntry ($i + 1) $iteratingEntry
-    outEventEntry ($i + 2) (logShowEvent "output done")
-  }
-
-  Write-Host "### $(stringLine "#" -length 42)"
-  Write-Host "### Execution log of '$($__execution_ctx.name)':"
-  Write-Host "  * timestamp -> $($__execution_ctx.timestamp.ToString("o"))"
-  Write-Host "  * watch -> $($__execution_ctx.watch.ElapsedMilliseconds) ms"
-  Write-Host "  * events -> $($(outEvents "      ") -join "`n")"
-
-  logShowEvent "all events shown" | Out-Null
 }
 
 function __logContext ($contextName, $ScriptBlock) {
@@ -302,10 +296,82 @@ function __logContext_writeSetDefaults () {
   __logContext_writeOnExit $true
 }
 
+function __logShowAllEvents_WriteHost () {
+  $elapsedMs = $__execution_ctx.watch.ElapsedMilliseconds
+  $length = $__execution_ctx.events.Count
+  $nextShowEventsCount = 4
+
+  function logShowEvent ($msg) {
+    __logEvent ("__logShowAllEvents_WriteHost: $msg")
+    return $__execution_ctx.events[-1]
+  }
+
+  logShowEvent "starting" | Out-Null
+
+  function outEvents ($indent) {
+    function strSize ($num) {
+      [Math]::Ceiling([Math]::Log10($num + 0.1))
+    }
+
+    function toRight ($size, $num) {
+      $num.ToString().PadLeft($size)
+    }
+
+    $events = $__execution_ctx.events
+
+    $idxPadding = $length + $nextShowEventsCount
+    $idxPadding = strSize $idxPadding
+    $msPadding = strSize (snd $events[-1])
+    $msPadding += 1
+
+    function outEventEntry ($i, $eventEntry) {
+      $idx = toRight $idxPadding $i
+
+      $ms = snd $eventEntry
+      $ms = toRight $msPadding $ms
+
+      $msg = fst $eventEntry
+      $prefix = "$indent$idx.  $ms ms"
+      Write-Prefixed $msg $prefix {
+        param($txt)
+        Write-Output $txt
+      }
+    }
+
+    function makeShowEntry ($message) {
+      $eventMs = $__execution_ctx.watch.ElapsedMilliseconds
+      return pair (prefixed $message) $eventMs
+    }
+
+    Write-Output "got $length events registered within $elapsedMs ms"
+
+    $i = 0
+    $iteratingEntry = "not-set :/"
+    $events | ForEach-Object {
+      if ($i -eq 0) {
+        $iteratingEntry = logShowEvent "iterating"
+      }
+
+      $i += 1
+      outEventEntry $i $_
+    }
+
+    outEventEntry ($i + 1) $iteratingEntry
+    outEventEntry ($i + 2) (logShowEvent "output done")
+  }
+
+  Write-Host "### $(stringLine "#" -length 42)"
+  Write-Host "### Execution log of '$($__execution_ctx.name)':"
+  Write-Host "  * timestamp -> $($__execution_ctx.timestamp.ToString("o"))"
+  Write-Host "  * watch -> $($__execution_ctx.watch.ElapsedMilliseconds) ms"
+  Write-Host "  * events -> $($(outEvents "    ") -join "`n")"
+
+  logShowEvent "all events shown" | Out-Null
+}
+
 __logEvent "Log framework defined."
 
-
-if ($__execution_ctx.includeExamples) {
+if ($__PROFILER_WithExamples -eq $true) {
   __logEvent "self-test: consecutive log"
   __logEvent "self-test: consecutive log"
   __logEvent "self-test: consecutive log"
@@ -326,6 +392,9 @@ if ($__execution_ctx.includeExamples) {
   __logEvent "A: consecutive log ii"
   __logScopePop
   __logEvent "???: outer_scope"
+  __logEvent "multi-line test"`
+    , "second line"`
+    , "`t& 3rd"
   __logScopePop
   __logEvent "???: after"
   __logEvent "top: under script blocks"
@@ -355,8 +424,7 @@ if ($__execution_ctx.includeExamples) {
         __logEvent "deeper embedded event"
         __logScopeAs "scoped task" {
           $items = Get-ChildItem -Path "."
-          __logEvent "Found $($items.Count) within:"
-          __logEvent $PWD
+          __logEvent "Found $($items.Count) items within working directory:", $PWD
         }
         __logEvent "embedded and deep context ends"
       }

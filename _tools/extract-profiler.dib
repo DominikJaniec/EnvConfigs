@@ -1,0 +1,176 @@
+#!meta
+
+{"kernelInfo":{"defaultKernelName":null,"items":[{"name":"csharp","languageName":"C#","aliases":["c#","cs"]},{"name":"fsharp","languageName":"F#","aliases":["f#","fs"]},{"name":"pwsh","languageName":"PowerShell","aliases":["powershell"]},{"name":"javascript","languageName":"JavaScript","aliases":["js"]},{"name":"html","languageName":"HTML"},{"name":"sql","languageName":"SQL"},{"name":"kql","languageName":"KQL"},{"name":"mermaid","languageName":"Mermaid"},{"name":"httpRequest","languageName":"http"},{"name":"value"}]}}
+
+#!fsharp
+
+let __EXPECTED_TERMINATING_REGION__ =
+    "Profiler capabilities"
+
+#!fsharp
+
+let resolvePath (relative: string) =
+    let sep = IO.Path.DirectorySeparatorChar
+    let cwd = Environment.CurrentDirectory
+    let location = relative.Replace('/', sep)
+
+    IO.Path.Combine(cwd, location)
+    |> IO.Path.GetFullPath
+
+    
+let __EXPECTED_PROFILER_SOURCE__ =
+    resolvePath "../Shells/Profile.ps1"
+
+let __DESIRED_PROFILER_OUTPUT__ =
+    resolvePath "./profiler.autogen.ps1"
+
+
+$"Looking for file '{__EXPECTED_PROFILER_SOURCE__}'"
+
+#!fsharp
+
+let profileFile =
+    __EXPECTED_PROFILER_SOURCE__
+    |> IO.File.ReadAllLines
+
+let regionStart = "#region "
+let regionEnd = "#endregion"
+let regionTerminating =
+    regionStart + __EXPECTED_TERMINATING_REGION__
+
+let equalic a b =
+    let oic = StringComparison.OrdinalIgnoreCase
+    String.Equals(a, b, oic)
+
+
+let profilerCodeLines =
+    let terminate = regionTerminating
+    let mutable lookForEnd = false
+    let linesChooser (line: string) =
+        let line = line.TrimEnd() 
+        match lookForEnd with
+        | false ->
+            if line |> equalic terminate
+            then lookForEnd <- true
+
+            Some line
+
+        | _ ->
+            if line |> equalic regionEnd
+            then None
+            else Some line
+
+    profileFile
+    |> Seq.map linesChooser
+    |> Seq.takeWhile Option.isSome
+    |> Seq.map Option.get
+    |> Seq.toArray
+
+
+let profilerCode =
+    let stringLine char length =
+        String.replicate length char
+
+    let longline = stringLine "#" 69
+    let spacer = Array.replicate 3 ""
+
+    let header = 
+        let content =
+            @"
+            param (
+                [switch]$__PROFILER_SetDebugVerbose,
+                [switch]$__PROFILER_WriteOn_LogEvent,
+                [switch]$__PROFILER_WithExamples
+            )
+            ".Split(Environment.NewLine)
+
+        let prefixed line =
+            "###       " + line
+
+        [ longline
+        ; prefixed
+            "!! this is auto-generated script file !!"
+        ; prefixed
+            "source: EnvConfig > extract-profiler.dib"
+        ; longline
+        ; yield! content
+        ; longline
+        ; ""
+        ]
+        |> List.toArray
+
+    let footer =
+        let contentWriteHosts =
+            let asWrite msg =
+                $"Write-Host \"%s{msg}\""
+
+            [ "to show accumulated events use:"
+            ; ">  __logShowAllEvents_WriteHost"
+            ] |> List.map asWrite
+
+        let contentEvents =
+            let profileFile = 
+                __DESIRED_PROFILER_OUTPUT__
+                |> IO.Path.GetFileName
+                    
+            let finalEvent =
+                $"script file '{profileFile}' executed"
+
+            let underline =
+                finalEvent.Length
+                |> stringLine "~"
+
+            let asEvent msg =
+                $"__logEvent \"%s{msg}\""
+
+            [ finalEvent ; underline ]
+            |> List.map asEvent
+
+        [ ""
+        ; longline
+        ; ""
+        // ; "if (-not $__PROFILER_MakeVeryVerbose.IsPresent) {"
+        // ; @"    $__execution_ctx.writeOnEvent = $false"
+        // ; @"    $__execution_ctx.writeOnExit = $true"
+        // ; "}"
+        // ; ""
+        ; yield! contentWriteHosts
+        ; yield! contentEvents
+        ; ""
+        ]
+        |> List.toArray
+
+    [ header
+    ; spacer
+    ; profilerCodeLines
+    ; spacer
+    ; footer
+    ]
+    |> Seq.concat
+    |> String.concat
+        Environment.NewLine
+
+
+$"Got {profilerCodeLines.Length} lines of 'profiler' code, from {profileFile.Length} of 'Profile'."
+
+#!fsharp
+
+let sinkFile = __DESIRED_PROFILER_OUTPUT__
+IO.File.WriteAllText
+    ( sinkFile
+    , profilerCode
+    )
+
+"Extracted 'profiler' saved at: " + sinkFile
+
+#!pwsh
+
+#!share --from fsharp __DESIRED_PROFILER_OUTPUT__
+
+# example of use 'profiler' script
+Write-Host "dot-loading script: '$__DESIRED_PROFILER_OUTPUT__'..."
+. "$__DESIRED_PROFILER_OUTPUT__"
+
+__logEvent "an example of logged event"
+
+__logShowAllEvents_WriteHost
