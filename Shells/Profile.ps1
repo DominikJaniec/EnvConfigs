@@ -2,6 +2,10 @@
 ###      Domin's  PowerShell 7 profile's configuration file      ###
 ####################################################################
 
+
+####################################################################
+#region Profiler context
+
 $__execution_stopwatch_ = `
   [System.Diagnostics.Stopwatch]::StartNew()
 
@@ -44,6 +48,8 @@ $__execution_ctx = @{
 
 Write-Debug "`$__PROFILER_SetDebugVerbose => $($__PROFILER_SetDebugVerbose)"
 Write-Debug "`$__PROFILER_WriteOn_LogEvent => $($__execution_ctx.writeOnEvent)"
+
+#endregion
 
 
 ####################################################################
@@ -889,6 +895,44 @@ __logScopePop
 __logScopePush "Oh-My-Posh"
 Write-VerboseDated "Preparing 'Oh-My-Posh' with prompt theme..."
 
+$global:prompt_measured = $null
+function Measure-Prompt {
+  if ($null -ne $global:prompt_measured) {
+    Write-Warning "already measuring prompt"
+    return
+  }
+
+  $currentPrompt = Get-ChildItem Function:\prompt
+  $currentPrompt = $currentPrompt.ScriptBlock
+  $global:prompt_measured = $currentPrompt
+  function global:prompt {
+    $watch = $(startWatch)
+    $render = "> "
+    $successful = $true
+    $measured = $global:prompt_measured
+    try { $render = $measured.Invoke() }
+    catch {
+      $successful = $false
+      Write-Warning "_________________________________________________"
+      Write-Warning "While rendering Prompt, encountered an exception:"
+      Write-Warning $_.InvocationInfo.PositionMessage
+
+      foreach ($line in "$($_.Exception)" -split "`n") {
+        Write-Warning $line
+        if ($line -match "^\s*at System\.Management\.Automation\.Interpreter\..+$") {
+          Write-Warning "(...)"
+          break;
+        }
+      }
+    }
+
+    $elapsed = $watch.ElapsedMilliseconds
+    return $successful `
+      ? "$render[$elapsed ms] " `
+      : "! $elapsed ms| $render"
+  }
+}
+
 function Save-OhMyPoshFavorites($favorites) {
   if ($null -eq $favorites) {
     throw "Cannot set NULL as Oh-My-Posh favorites."
@@ -940,7 +984,7 @@ function Set-OhMyPoshFavorite ($name = $null) {
   Save-OhMyPoshFavorites $favorites
 }
 
-function Set-OhMyPoshTheme ($name = $null, [switch]$FromFavorites, [switch]$UseRandom) {
+function Set-OhMyPoshTheme ($name = $null, [switch]$FromFavorites, [switch]$UseRandom, [switch]$Measure) {
   if (-not $UseRandom.IsPresent -and $null -eq $name) {
     throw "No Oh-My-Posh theme was provided. Use '-UseRandom' to skip `$name argument."
   }
@@ -987,13 +1031,19 @@ function Set-OhMyPoshTheme ($name = $null, [switch]$FromFavorites, [switch]$UseR
   | Invoke-Expression
 
   $env:POSH_THEMES__CURRENT = $configName
+  $global:prompt_measured = $null
+
+  if ($Measure.IsPresent) {
+    __logEvent "Enabling time measured prompt"
+    Measure-Prompt
+  }
 }
 
 __logEvent "Extension methods defined."
 
 
 if (Find-ParentProcess "WindowsTerminal") {
-  Set-OhMyPoshTheme -UseRandom
+  Set-OhMyPoshTheme -UseRandom -Measure
   Write-VerboseDated "Prompt vai Oh-My-Posh module loaded."
 }
 else {
@@ -1062,6 +1112,20 @@ function gdt { git dt $args }
 function gmt { git mt $args }
 
 Write-VerboseDated "The 'git' related aliases defined."
+
+#endregion
+
+
+####################################################################
+#region > Shell's prompt completion: `posh-git`
+
+__logScopePush "posh-git"
+Write-VerboseDated "Preparing 'posh-git' prompt completion..."
+
+__logEvent "importing posh-git-no-prompt.psm1"
+Import-Module -Name "$HOME\Repos\posh-git\src\posh-git-no-prompt.psm1"
+
+Write-VerboseDated "The 'git' completion loaded."
 
 #endregion
 
