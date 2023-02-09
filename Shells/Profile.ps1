@@ -11,10 +11,10 @@ $__execution_stopwatch_ = `
 
 $__execution_timestamp_ = Get-Date -AsUTC
 
-### Note: Uncomment one whichever you need ;)
+# ### Note: Uncomment one whichever you need ;)
 # $Env:__PROFILER_SetDebugVerbose = $true
 # $Env:__PROFILER_WriteOn_LogEvent = $true
-# $Env:__PROFILER_WithExamples = $true
+# # $Env:__PROFILER_WithExamples = $true
 # $DebugPreference = "Continue"
 # $VerbosePreference = "Continue"
 
@@ -36,7 +36,8 @@ if ($__PROFILER_SetDebugVerbose -eq $true) {
   $VerbosePreference = "Continue"
 }
 
-Write-Debug "Profile.ps1 starting at: $($__execution_timestamp_.ToLocalTime().ToString("dddd, 1yyyy-MM-dd HH:mm:ss.fff (zzz)"))"
+Write-Host "_________.______________________________________________________________"
+Write-Debug "Starting at: $($__execution_timestamp_.ToLocalTime().ToString("dddd, 1yyyy-MM-dd HH:mm:ss.fff (zzz)"))"
 
 $__execution_ctx = @{
   watch          = $__execution_stopwatch_
@@ -132,6 +133,16 @@ function Write-DebugElapsed ($Message, $ms = $null) {
   Write-Prefixed $Message $ms {
     param($txt)
     Write-Debug $txt
+  }
+}
+
+function Write-HostElapsed ($Message, $IndentSize = 11) {
+  $ms = $__execution_ctx.watch.ElapsedMilliseconds
+  $ms = "$ms ms| ".PadLeft($IndentSize)
+
+  Write-Prefixed $Message $ms {
+    param($txt)
+    Write-Host $txt
   }
 }
 
@@ -648,6 +659,8 @@ Write-VerboseDated "Navigation commands toolkit prepared."
 #region > UX `PSReadLine` Configuration
 __logScopePush "PSReadLine"
 
+Write-HostElapsed "Enhancing command line interface with PSReadLine extensions"
+
 # bash style completion without using Emacs mode:
 Set-PSReadLineKeyHandler -Key Tab -Function Complete
 
@@ -890,7 +903,7 @@ __logScopePop
 
 
 ####################################################################
-#region > Shell's prompt Theme: `Oh-My-Posh`
+#region > Prompt theme: `Oh-My-Posh`
 
 __logScopePush "Oh-My-Posh"
 Write-VerboseDated "Preparing 'Oh-My-Posh' with prompt theme..."
@@ -1020,7 +1033,7 @@ function Set-OhMyPoshTheme ($name = $null, [switch]$FromFavorites, [switch]$UseR
     $configName = getRandomOhMyPoshConfig
   }
 
-  Write-Host "Oh-My-Posh initializing with: '$configName'"
+  Write-HostElapsed "Initializing Oh-My-Posh with: '$configName'"
   $configPath = Join-Path $env:POSH_THEMES_PATH $configName
 
   if (-not (Test-Path $configPath)) {
@@ -1044,7 +1057,7 @@ __logEvent "Extension methods defined."
 
 if (Find-ParentProcess "WindowsTerminal") {
   Set-OhMyPoshTheme -UseRandom -Measure
-  Write-VerboseDated "Prompt vai Oh-My-Posh module loaded."
+  Write-VerboseDated "Prompt via Oh-My-Posh module loaded."
 }
 else {
   Write-VerboseDated "Oh-My-Posh prompt skipped", `
@@ -1093,6 +1106,9 @@ Write-VerboseDated "The 'start-ish' functions created."
 Set-Alias -Name g `
   -Value git
 
+Write-VerboseDated "Removing git-coliding PowerShell aliases."
+Remove-Alias -Scope Global -Force -Name gcm, gps
+
 function gst { git st $args }
 function glo { git lo $args }
 function gbr { git br $args }
@@ -1108,8 +1124,8 @@ function gft { git ft $args }
 function gmg { git mg $args }
 function gpl { git pl $args }
 function gps { git ps $args }
-function gdt { git dt $args }
-function gmt { git mt $args }
+function gdt { git dt $args } # missing in git
+function gmt { git mt $args } # missing in git
 
 Write-VerboseDated "The 'git' related aliases defined."
 
@@ -1117,12 +1133,17 @@ Write-VerboseDated "The 'git' related aliases defined."
 
 
 ####################################################################
-#region > Shell's prompt completion: `posh-git`
+#region > Prompt completion: `posh-git`
 
 __logScopePush "posh-git"
-Write-VerboseDated "Preparing 'posh-git' prompt completion..."
+Write-VerboseDated "Preparing 'posh-git' commands completion..."
+
+$Env:GitFunctionsCompletion = $true
+$Env:GitVersion = [System.Version]"2.39.1"
+$Env:GitFlow = $true
 
 __logEvent "importing posh-git-no-prompt.psm1"
+Write-HostElapsed "Importing Posh-Git module for commands completion"
 Import-Module -Name "$HOME\Repos\posh-git\src\posh-git-no-prompt.psm1"
 
 Write-VerboseDated "The 'git' completion loaded."
@@ -1219,4 +1240,14 @@ Write-VerboseDated "The 'fake' build-tool qualified."
 #endregion
 
 
-Write-Host "Domin's personal Profile.ps1 executed within $($__execution_stopwatch_.ElapsedMilliseconds) ms."
+####################################################################
+#region Final status show
+
+Write-HostElapsed "Warming up shell's prompt via it first execution"
+__logScopeAs "prompt-1st" {
+  $(prompt) | Out-Null
+}
+
+Write-HostElapsed "Domin's personal Profile.ps1 fully executed`n"
+
+#endregion
