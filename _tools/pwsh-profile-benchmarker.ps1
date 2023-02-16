@@ -2,9 +2,15 @@ param ([int]$Iterations = 13, [switch]$SkipJustPwsh)
 
 $TotalWatch = [Diagnostics.Stopwatch]::StartNew()
 $HorizontalLine = [string]::new("_", 69)
+$Exit013 = "exit `$? ? 0 : 13"
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version 3.0
+
+if ($Iterations -lt 1) {
+    Write-Error "`$Iterations ($Iterations) value cannot be negative."
+    exit 13
+}
 
 
 # Unique keys for each version of profile-ish script:
@@ -36,6 +42,47 @@ function Show-ProfileScriptLines ($Key, $Lines) {
     }
 }
 
+function Start-PwshWith ($ProfileScript) {
+    $command = "$ProfileScript"
+    $bytes = [Text.Encoding]::Unicode.GetBytes($command)
+    $codedCommand = [Convert]::ToBase64String($bytes)
+
+    $watch = [Diagnostics.Stopwatch]::StartNew()
+    $out = pwsh -NoLogo -NoProfile -NonInteractive `
+        -EncodedCommand $codedCommand `
+    | Out-String
+
+    $exit = $?
+    $ms = $watch.ElapsedMilliseconds
+    return , $exit, $ms, $out.Trim()
+}
+
+function Start-PwshScriptWarmup ($Key, $ScriptBlock) {
+    Write-Host $HorizontalLine
+    Write-Host "Script warmup of '$Key':"
+
+    $ret = Start-PwshWith $ScriptBlock
+    $exit = $ret[0]
+    $ms = $ret[1]
+    $out = $ret[2]
+
+    $Warmups[$Key] = $ms
+    Write-Host "`t *  exited: $exit, within $ms [ms]"
+    Write-Host $(
+        [String]::IsNullOrWhiteSpace($out) `
+            ? "`t *  no-output" `
+            : $out
+    )
+
+    if (-not $exit) {
+        Write-Error "Got $exit from '$Key'"
+    }
+
+    Write-Host ""
+}
+
+
+$Warmups = @{}
 $ProfilingScripts = $Keys | ForEach-Object {
     $lines = $_ -ne $JustPwshKey `
         ? @(Get-ProfileScriptLines -Key $_) `
@@ -43,7 +90,11 @@ $ProfilingScripts = $Keys | ForEach-Object {
 
     Show-ProfileScriptLines $_ $lines
 
+    $lines += $Exit013
     $ps = $lines -join "`n"
+
+    Start-PwshScriptWarmup $_ $ps
+
     [PSObject]@{
         Key    = $_;
         Script = $ps
@@ -53,6 +104,8 @@ $ProfilingScripts = $Keys | ForEach-Object {
 $ProfiledTimes = @{}
 foreach ($key in $Keys) {
     $times = New-Object Collections.Generic.List[int]
+    $times.Add($Warmups[$key])
+
     $ProfiledTimes[$key] = $times
 }
 
@@ -61,8 +114,8 @@ Write-Host ""
 $id = "Benchmarking"
 
 function Get-ProfilingKeysOrder ($Keys) {
-    $ith = 0
-    $level = 1
+    $ith = 1
+    $level = 2
 
     while ($true) {
         if ($Iterations -lt $ith) {
@@ -86,19 +139,9 @@ function Get-ProfilingKeysOrder ($Keys) {
     }
 }
 
-function Measure-Script ($ProfileScript, $MeasuredTimes) {
-    $command = "$ProfileScript"
-    $bytes = [Text.Encoding]::Unicode.GetBytes($command)
-    $codedCommand = [Convert]::ToBase64String($bytes)
 
-    $watch = [Diagnostics.Stopwatch]::StartNew()
-    pwsh -NoProfile -NoLogo -NonInteractive `
-        -EncodedCommand $codedCommand `
-    | Out-Null
-
-    $MeasuredTimes.Add($watch.ElapsedMilliseconds)
-}
-
+$keysOrder = @(Get-ProfilingKeysOrder $Keys)
+$Iterations-- # due to warmup runs
 
 $totalCount = $Iterations * $KeysCount
 $percentFactor = 100.0 / $totalCount
@@ -107,14 +150,13 @@ $padding = [int]([Math]::Ceiling($padding))
 $padding += 1 # just for nicer space before
 
 $i = 1
-$keysOrder = @(Get-ProfilingKeysOrder $Keys)
 foreach ($key in $keysOrder) {
     $completed = $i * $percentFactor
     if ($completed -lt 1) { $completed = 1 }
     if ($completed -gt 100) { $completed = 100 }
 
     $iter = "$i".PadLeft($padding)
-    $status = "$iter. Runnin: $key"
+    $status = "$iter. [$totalCount] Runnin: $key"
     Write-Progress -Activity $id -Status $status `
         -PercentComplete $completed
 
@@ -124,7 +166,10 @@ foreach ($key in $keysOrder) {
     | ForEach-Object { $_.Script } `
     | Select-Object -Unique
 
-    Measure-Script $scriptTarget $scriptTimes
+    $ret = Start-PwshWith $scriptTarget
+    $ms = $ret[1]
+
+    $scriptTimes.Add($ms)
     $i++
 }
 
@@ -157,6 +202,7 @@ foreach ($key in $Keys) {
             ? "$_,`n`t" `
             : "$_, "
     }
+
     $times = [string]::Concat($times)
     $times = $times.TrimEnd(" ", ",")
     Write-Host "`t$times"
