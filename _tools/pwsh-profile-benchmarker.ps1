@@ -1,8 +1,8 @@
-param ([int]$Iterations = 13, [switch]$SkipJustPwsh)
+param ([int]$Iterations = 42, [switch]$SkipJustPwsh, [switch]$SkipJustModule)
 
 $TotalWatch = [Diagnostics.Stopwatch]::StartNew()
 $HorizontalLine = [string]::new("_", 69)
-$Exit013 = "exit `$? ? 0 : 13"
+
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version 3.0
@@ -21,6 +21,12 @@ function Get-ProfileScriptLines ($Key) {
     @("Write-Host `"Hello '$Key'!`"")
 }
 
+# Special case of "just" Import-Module of simple module:
+$JustModuleKey = "just-import-module"
+$JustModuleLines = @("Import-Module -Name `"$PSScriptRoot\empty-ish-module.psm1`"")
+if (-not $SkipJustModule.IsPresent) {
+    $Keys = @($JustModuleKey) + $Keys
+}
 
 # Special case of "just" PowerShell run:
 $JustPwshKey = "just-pwsh"
@@ -30,8 +36,10 @@ if (-not $SkipJustPwsh.IsPresent) {
 }
 
 $KeysCount = $Keys.Length
+$linesOfKeys = $Keys | ForEach-Object { "`n`t- $_" }
 "Benchmarking $KeysCount profile-ish scripts" `
     + " with $Iterations`x iterations each." `
+    + $linesOfKeys
 | Write-Host
 
 function Show-ProfileScriptLines ($Key, $Lines) {
@@ -67,7 +75,7 @@ function Start-PwshScriptWarmup ($Key, $ScriptBlock) {
     $out = $ret[2]
 
     $Warmups[$Key] = $ms
-    Write-Host "`t *  exited: $exit, within $ms [ms]"
+    Write-Host "`t *  successfully exited: $exit, within $ms [ms]"
     Write-Host $(
         [String]::IsNullOrWhiteSpace($out) `
             ? "`t *  no-output" `
@@ -84,15 +92,16 @@ function Start-PwshScriptWarmup ($Key, $ScriptBlock) {
 
 $Warmups = @{}
 $ProfilingScripts = $Keys | ForEach-Object {
-    $lines = $_ -ne $JustPwshKey `
-        ? @(Get-ProfileScriptLines -Key $_) `
-        : @($JustPwshLines)
+    $lines = switch ($_) {
+        $JustPwshKey { @($JustPwshLines) }
+        $JustModuleKey { @($JustModuleLines) }
+        Default { @(Get-ProfileScriptLines -Key $_) }
+    }
 
     Show-ProfileScriptLines $_ $lines
 
-    $lines += $Exit013
+    $lines += "; exit `$? ? 0 : 13"
     $ps = $lines -join "`n"
-
     Start-PwshScriptWarmup $_ $ps
 
     [PSObject]@{
