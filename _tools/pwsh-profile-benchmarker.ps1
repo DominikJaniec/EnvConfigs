@@ -1,4 +1,4 @@
-param ([int]$Iterations = 42, [switch]$SkipJustPwsh, [switch]$SkipJustModule)
+param ([int]$Iterations = 42, [switch]$ToCSV, [switch]$SkipJustPwsh, [switch]$SkipJustModule)
 
 $TotalWatch = [Diagnostics.Stopwatch]::StartNew()
 $HorizontalLine = [string]::new("_", 69)
@@ -37,7 +37,7 @@ if (-not $SkipJustPwsh.IsPresent) {
 
 $KeysCount = $Keys.Length
 "Benchmarking $KeysCount profile-ish scripts" `
-    + " with $Iterations`x iterations each." `
+    + " with $Iterations`x iterations each."
 | Write-Host
 
 function Show-ProfileScriptLines ($Key, $Lines) {
@@ -46,8 +46,10 @@ function Show-ProfileScriptLines ($Key, $Lines) {
     foreach ($line in $Lines) {
         Write-Host "`t> $line"
     }
+    Write-Host ("`t+" + [string]::new("-", 61))
 }
 
+$script:PwshCounter = 0
 function Start-PwshWith ($ProfileScript) {
     $command = "$ProfileScript"
     $bytes = [Text.Encoding]::Unicode.GetBytes($command)
@@ -57,38 +59,49 @@ function Start-PwshWith ($ProfileScript) {
     $out = pwsh -NoLogo -NoProfile -NonInteractive `
         -EncodedCommand $codedCommand `
     | Out-String
+    $gotError = -not $?
 
-    $exit = $?
-    $ms = $watch.ElapsedMilliseconds
-    return , $exit, $ms, $out.Trim()
+    return @{
+        nth = ++$script:PwshCounter
+        err = $gotError
+        ms  = $watch.ElapsedMilliseconds
+        out = $out.Trim()
+    }
 }
 
+$Warmups = @{}
 function Start-PwshScriptWarmup ($Key, $ScriptBlock) {
-    Write-Host $HorizontalLine
-    Write-Host "Script warmup of '$Key':"
+    $id = "Warmup: '$Key'"
+    Write-Progress -Activity $id `
+        -Status "Executin script..." `
+        -PercentComplete 33
 
     $ret = Start-PwshWith $ScriptBlock
-    $exit = $ret[0]
-    $ms = $ret[1]
-    $out = $ret[2]
+    Write-Progress -Activity $id `
+        -Completed
 
-    $Warmups[$Key] = $ms
-    Write-Host "`t*  successfully exited: $exit, within $ms [ms]"
-    Write-Host $(
+    $Warmups[$Key] = $ret
+    $exit = -not $ret.err
+    $ms = $ret.ms
+    $out = $ret.out
+
+    Write-Host "`t`t*  successfully exited: $exit, within $ms [ms]"
         [String]::IsNullOrWhiteSpace($out) `
-            ? "`t*  no-output" `
+        ? "`t`t*  no-output" `
             : $out
-    )
+    | Write-Host
 
     if (-not $exit) {
         Write-Error "Got $exit from '$Key'"
     }
 
     Write-Host ""
+
+    # a hack, to fix progress bar:
+    Start-Sleep -Milliseconds 609
 }
 
 
-$Warmups = @{}
 $WarmupsWatch = [Diagnostics.Stopwatch]::StartNew()
 $TestScripts = $Keys | ForEach-Object {
     $lines = switch ($_) {
@@ -108,15 +121,11 @@ $TestScripts = $Keys | ForEach-Object {
         Script = $ps
     }
 }
-
 $warmupsElapsed = $WarmupsWatch.Elapsed
 
-$ProfiledTimes = @{}
+$Profiled = @{}
 foreach ($key in $Keys) {
-    $times = New-Object Collections.Generic.List[int]
-    $times.Add($Warmups[$key])
-
-    $ProfiledTimes[$key] = $times
+    $Profiled[$key] = @($Warmups[$key])
 }
 
 
@@ -151,8 +160,7 @@ function Get-MeasuredKeysOrder ($Keys) {
 
 
 $keysOrder = @(Get-MeasuredKeysOrder $Keys)
-$Iterations-- # due to warmup runs
-$totalCount = $Iterations * $KeysCount
+$totalCount = ($Iterations - 1) * $KeysCount
 
 $initETA = [double]$totalCount / $KeysCount
 $initETA *= $warmupsElapsed.TotalMilliseconds
@@ -198,16 +206,14 @@ foreach ($key in $keysOrder) {
     Write-Progress -Activity $id -Status $status `
         -PercentComplete $completed
 
-    $scriptTimes = $ProfiledTimes[$key]
-    $scriptTarget = $TestScripts `
-    | Where-Object { $_.Key -eq $key } `
-    | ForEach-Object { $_.Script } `
+    $scriptTarget = $TestScripts
+    | Where-Object { $_.Key -eq $key }
+    | ForEach-Object { $_.Script }
     | Select-Object -Unique
 
     $ret = Start-PwshWith $scriptTarget
-    $ms = $ret[1]
-
-    $scriptTimes.Add($ms)
+    $times = $Profiled[$key]
+    $Profiled[$key] = $times + $ret
     $i++
 }
 
@@ -216,12 +222,12 @@ $benchmarkingElapsed = $benchmarkingWatch.Elapsed
 
 
 foreach ($key in $Keys) {
-    $times = $ProfiledTimes[$key] `
-    | ForEach-Object { [int]$_ }
+    $times = $Profiled[$key]
+    | ForEach-Object { $_.ms }
 
     Write-Host $HorizontalLine
     Write-Host "Times for: $key"
-    $stats = $times `
+    $stats = $times
     | Measure-Object -AllStats
 
     $len = $stats.Count
@@ -231,7 +237,7 @@ foreach ($key in $Keys) {
     $stdev = [int][Math]::Round($stats.StandardDeviation)
     "`tcount $len | [ms]" `
         + "  min:$min  max:$max" `
-        + "  avg:~$avg  stdev:~$stdev" `
+        + "  avg:~$avg  stdev:~$stdev"
     | Write-Host
 
     $i = 0
@@ -253,6 +259,30 @@ Write-Host $HorizontalLine
 
 $totalCount += $KeysCount
 Write-Host "Tested $KeysCount profile-ish scripts with $totalCount total runs."
+
+if ($ToCSV.IsPresent) {
+    # $now = Get-Date -Format "yyMMdd-HHmmss"
+    # $file = Join-Path $PWD "results-$now.csv"
+    $file = "pwsh-profile-results.csv"
+    function Get-CSVResultRow ($iteration) {
+        $row = [ordered]@{}
+        foreach ($key in $Keys) {
+            $it = $Profiled[$key][$iteration]
+            $row.Add("$key(nth)", $it.nth)
+            $row.Add("$key(ms)", $it.ms)
+        }
+
+        return $row
+    }
+
+    0..($Iterations - 1)
+    | ForEach-Object { Get-CSVResultRow $_ }
+    | Export-Csv -Path $file -Delimiter ";"
+
+    Write-Host "`t- Results saved into: $file"
+}
+
+Write-Host ""
 Write-Host "Whole benchmark executed within: $($TotalWatch.Elapsed)"
 Write-Host "`t  * Warmup elapsed time: $warmupsElapsed"
 Write-Host "`t    * Benchmarking time: $benchmarkingElapsed"
