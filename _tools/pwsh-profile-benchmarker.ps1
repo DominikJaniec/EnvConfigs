@@ -36,10 +36,8 @@ if (-not $SkipJustPwsh.IsPresent) {
 }
 
 $KeysCount = $Keys.Length
-$linesOfKeys = $Keys | ForEach-Object { "`n`t- $_" }
 "Benchmarking $KeysCount profile-ish scripts" `
     + " with $Iterations`x iterations each." `
-    + $linesOfKeys
 | Write-Host
 
 function Show-ProfileScriptLines ($Key, $Lines) {
@@ -75,10 +73,10 @@ function Start-PwshScriptWarmup ($Key, $ScriptBlock) {
     $out = $ret[2]
 
     $Warmups[$Key] = $ms
-    Write-Host "`t *  successfully exited: $exit, within $ms [ms]"
+    Write-Host "`t*  successfully exited: $exit, within $ms [ms]"
     Write-Host $(
         [String]::IsNullOrWhiteSpace($out) `
-            ? "`t *  no-output" `
+            ? "`t*  no-output" `
             : $out
     )
 
@@ -91,7 +89,8 @@ function Start-PwshScriptWarmup ($Key, $ScriptBlock) {
 
 
 $Warmups = @{}
-$ProfilingScripts = $Keys | ForEach-Object {
+$WarmupsWatch = [Diagnostics.Stopwatch]::StartNew()
+$TestScripts = $Keys | ForEach-Object {
     $lines = switch ($_) {
         $JustPwshKey { @($JustPwshLines) }
         $JustModuleKey { @($JustModuleLines) }
@@ -110,6 +109,8 @@ $ProfilingScripts = $Keys | ForEach-Object {
     }
 }
 
+$warmupsElapsed = $WarmupsWatch.Elapsed
+
 $ProfiledTimes = @{}
 foreach ($key in $Keys) {
     $times = New-Object Collections.Generic.List[int]
@@ -122,7 +123,7 @@ foreach ($key in $Keys) {
 Write-Host ""
 $id = "Benchmarking"
 
-function Get-ProfilingKeysOrder ($Keys) {
+function Get-MeasuredKeysOrder ($Keys) {
     $ith = 1
     $level = 2
 
@@ -149,14 +150,27 @@ function Get-ProfilingKeysOrder ($Keys) {
 }
 
 
-$keysOrder = @(Get-ProfilingKeysOrder $Keys)
+$keysOrder = @(Get-MeasuredKeysOrder $Keys)
 $Iterations-- # due to warmup runs
-
 $totalCount = $Iterations * $KeysCount
+
+$initETA = [double]$totalCount / $KeysCount
+$initETA *= $warmupsElapsed.TotalMilliseconds
+$initETA = [TimeSpan]::FromMilliseconds($initETA)
+
+Write-Host $HorizontalLine
+"Measurement of $KeysCount profile-ish scripts" `
+    + " with total $totalCount` tests." `
+    + ($Keys | ForEach-Object { "`n`t- $_" })
+| Write-Host
+Write-Host ""
+
 $percentFactor = 100.0 / $totalCount
 $padding = [Math]::Log10($totalCount + 0.1)
 $padding = [int]([Math]::Ceiling($padding))
 $padding += 1 # just for nicer space before
+
+$benchmarkingWatch = [Diagnostics.Stopwatch]::StartNew()
 
 $i = 1
 foreach ($key in $keysOrder) {
@@ -164,13 +178,28 @@ foreach ($key in $keysOrder) {
     if ($completed -lt 1) { $completed = 1 }
     if ($completed -gt 100) { $completed = 100 }
 
+    $elapsedMs = $benchmarkingWatch.ElapsedMilliseconds
+    $leftMs = ([double]$elapsedMs / $i) * ($totalCount - $i)
+    $left = [Timespan]::FromMilliseconds($leftMs)
+    $left = $left.ToString("G")
+    if ($left.Length -gt 12) {
+        $left = $left.Substring(0, 12)
+    }
+
+    $total = $elapsedMs + $leftMs
+    $diff = $total - $initETA.TotalMilliseconds
+    $diff = $diff / 1000.0
+
+    $eta = $diff -lt 0 ? " " : " +"
+    $eta = $left + $eta + $diff.ToString("f1")
+
     $iter = "$i".PadLeft($padding)
-    $status = "$iter. [$totalCount] Runnin: $key"
+    $status = "$iter. #$totalCount $eta | Runnin: $key"
     Write-Progress -Activity $id -Status $status `
         -PercentComplete $completed
 
     $scriptTimes = $ProfiledTimes[$key]
-    $scriptTarget = $ProfilingScripts `
+    $scriptTarget = $TestScripts `
     | Where-Object { $_.Key -eq $key } `
     | ForEach-Object { $_.Script } `
     | Select-Object -Unique
@@ -183,6 +212,7 @@ foreach ($key in $keysOrder) {
 }
 
 Write-Progress -Activity $id -Completed
+$benchmarkingElapsed = $benchmarkingWatch.Elapsed
 
 
 foreach ($key in $Keys) {
@@ -220,6 +250,11 @@ foreach ($key in $Keys) {
 
 Write-Host ""
 Write-Host $HorizontalLine
-"Whole benchmark executed within:" `
-    + " $($TotalWatch.Elapsed)`n" `
-| Write-Host
+
+$totalCount += $KeysCount
+Write-Host "Tested $KeysCount profile-ish scripts with $totalCount total runs."
+Write-Host "Whole benchmark executed within: $($TotalWatch.Elapsed)"
+Write-Host "`t  * Warmup elapsed time: $warmupsElapsed"
+Write-Host "`t    * Benchmarking time: $benchmarkingElapsed"
+Write-Host "`t       * Estimated time: $initETA"
+Write-Host ""
