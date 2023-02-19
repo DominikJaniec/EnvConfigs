@@ -54,7 +54,7 @@ Write-Debug "`$__PROFILER_WriteOn_LogEvent => $($__execution_ctx.writeOnEvent)"
 
 
 ####################################################################
-#region Helpers
+#region > Common helpers
 
 function startWatch () {
   [System.Diagnostics.Stopwatch]::StartNew()
@@ -104,7 +104,7 @@ function dump ($obj, $name = "Given object") {
 
 
 ####################################################################
-#region Execution Log Writers
+#region > Execution Log writers
 
 function Write-Prefixed ($Message, $prefix, [ScriptBlock]$writer) {
   function prefixedWrite ($prefix, $txt) {
@@ -162,7 +162,7 @@ Write-VerboseDated "Verbosity set to: $VerbosePreference"
 
 
 ####################################################################
-#region Profiler capabilities
+#region > Log Profiler capabilities
 
 if ($DebugPreference -ne "Continue") {
   Write-Verbose "Disabling Log Event Writers"
@@ -556,7 +556,7 @@ Write-VerboseDated "Environment related commands defined."
 
 
 ####################################################################
-#region Navigation and Exploration
+#region Space Navigation
 
 function cd.. { Set-Location .. }
 function .. { Set-Location .. }
@@ -650,13 +650,69 @@ function ula () {
   u && l -a
 }
 
+# TODO: colum sort with folders on top
+function sl ($path) {}
+function sla ($path) {}
+function sll ($path) {}
+
 Write-VerboseDated "Navigation commands toolkit prepared."
 
 #endregion
 
 
 ####################################################################
-#region > UX `PSReadLine` Configuration
+#region The `d-*` do-framework
+
+# TODO: overridable daily-doing stuff
+function d () {}
+function d-clean () {}
+function d-build () {}
+function d-setup () {}
+function d-exec () {}
+function d-exec-devs () {}
+function d-exec-forc () {}
+function d-exec-prod () {}
+function d-exec-norm () {}
+function d-exec-mini () {}
+function d-data () {}
+function d-data-normal () {}
+function d-data-local () {}
+function d-data-version () {}
+
+#endregion
+
+
+####################################################################
+#region The `start-ish` Utility
+
+function start-wt ($subCommand) {
+  Write-Verbose "Launching Windows Terminal in current directory..."
+  Write-Verbose "`t* Sub-Command: '$subCommand'"
+  Start-Process -FilePath wt `
+    -ArgumentList "-d .", $subCommand
+}
+
+function start-pwsh ($command) {
+  function encode ($cmd) {
+    $bytes = [System.Text.Encoding]::Unicode.GetBytes($cmd)
+    $encodedCommand = [Convert]::ToBase64String($bytes)
+    return "-EncodedCommand $encodedCommand"
+  }
+
+  $cmd = $null -ne $command `
+    ? (encode $command) `
+    : ""
+
+  start-wt "pwsh -NoExit $cmd"
+}
+
+Write-VerboseDated "The 'start-ish' functions created."
+
+#endregion
+
+
+####################################################################
+#region CLI UX: `PSReadLine`
 __logScopePush "PSReadLine"
 
 Write-HostElapsed "Enhancing command line interface with PSReadLine extensions"
@@ -903,7 +959,7 @@ __logScopePop
 
 
 ####################################################################
-#region > Prompt theme: `Oh-My-Posh`
+#region Theme: `Oh-My-Posh`
 
 __logScopePush "Oh-My-Posh"
 Write-VerboseDated "Preparing 'Oh-My-Posh' with prompt theme..."
@@ -1072,36 +1128,7 @@ __logScopePop
 
 
 ####################################################################
-#region > The `start-ish` Utility
-
-function start-wt ($subCommand) {
-  Write-Verbose "Launching Windows Terminal in current directory..."
-  Write-Verbose "`t* Sub-Command: '$subCommand'"
-  Start-Process -FilePath wt `
-    -ArgumentList "-d .", $subCommand
-}
-
-function start-pwsh ($command) {
-  function encode ($cmd) {
-    $bytes = [System.Text.Encoding]::Unicode.GetBytes($cmd)
-    $encodedCommand = [Convert]::ToBase64String($bytes)
-    return "-EncodedCommand $encodedCommand"
-  }
-
-  $cmd = $null -ne $command `
-    ? (encode $command) `
-    : ""
-
-  start-wt "pwsh -NoExit $cmd"
-}
-
-Write-VerboseDated "The 'start-ish' functions created."
-
-#endregion
-
-
-####################################################################
-#region > Tools: `git`
+#region Tools: `git`
 
 Set-Alias -Name g `
   -Value git
@@ -1133,18 +1160,22 @@ Write-VerboseDated "The 'git' related aliases defined."
 
 
 ####################################################################
-#region > Prompt completion: `posh-git`
+#region Completion: `Posh-Git`
 
-__logScopePush "posh-git"
-Write-VerboseDated "Preparing 'posh-git' commands completion..."
+__logScopePush "Posh-Git"
+Write-VerboseDated "Preparing 'Posh-Git' commands completion..."
 
-$Env:GitFunctionsCompletion = $true
-$Env:GitVersion = [System.Version]"2.39.1"
-$Env:GitFlow = $true
+__logEvent "importing posh-git.psm1"
+$global:PoshGit_InitProps = @{
+  DisablePoshGitPrompt  = $true
+  UseFunctionCompletion = $true
+  ShowCompletionErrors  = $true
+  LocalGitVersion       = [System.Version]"2.39.2"
+  LocalGitExtensions    = @{ flow = $true }
+}
 
-__logEvent "importing posh-git-no-prompt.psm1"
 Write-HostElapsed "Importing Posh-Git module for commands completion"
-Import-Module -Name "$HOME\Repos\posh-git\src\posh-git-no-prompt.psm1"
+Import-Module -Name "$HOME\Repos\posh-git\src\posh-git.psm1"
 
 Write-VerboseDated "The 'git' completion loaded."
 
@@ -1152,7 +1183,7 @@ Write-VerboseDated "The 'git' completion loaded."
 
 
 ####################################################################
-#region > Tools: `dotnet`
+#region Tools: `dotnet`
 
 Write-VerboseDated "Defining 'dotnet' related commands..."
 
@@ -1180,7 +1211,7 @@ Write-VerboseDated "The 'dotnet' CLI arranged."
 
 
 ####################################################################
-#region > Tools: `fake`
+#region Tools: `fake`
 
 # TODO:
 # * don't close window after fake-it
@@ -1241,7 +1272,7 @@ Write-VerboseDated "The 'fake' build-tool qualified."
 
 
 ####################################################################
-#region Final status show
+#region Warmup `prompt`
 
 Write-HostElapsed "Warming up shell's prompt via it first execution"
 __logScopeAs "prompt-1st" {
