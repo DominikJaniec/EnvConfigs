@@ -3,6 +3,19 @@
 ####################################################################
 
 
+### Uncomment whatever you need ;)
+
+# Set-StrictMode -Version Latest
+# $ErrorActionPreference = "Stop"
+# $DebugPreference = "Continue"
+# $VerbosePreference = "Continue"
+
+# $__PROFILER_SetStrictModeStop = $true
+# $__PROFILER_SetDebugVerbose = $true
+# $__PROFILER_WriteOn_LogEvent = $true
+# $__PROFILER_WithExamples = $true
+
+
 ####################################################################
 #region Profiler context
 
@@ -11,35 +24,39 @@ $__execution_stopwatch_ = `
 
 $__execution_timestamp_ = Get-Date -AsUTC
 
-# ### Note: Uncomment one whichever you need ;)
-# $Env:__PROFILER_SetDebugVerbose = $true
-# $Env:__PROFILER_WriteOn_LogEvent = $true
-# # $Env:__PROFILER_WithExamples = $true
-# $DebugPreference = "Continue"
-# $VerbosePreference = "Continue"
 
+$__PROFILER_SetStrictModeStop = `
+(Test-Path variable:__PROFILER_SetStrictModeStop) `
+  -and $__PROFILER_SetStrictModeStop -eq $true
 
 $__PROFILER_SetDebugVerbose = `
-  $Env:__PROFILER_SetDebugVerbose -eq $true `
-  -or $__PROFILER_SetDebugVerbose.IsPresent
+(Test-Path variable:__PROFILER_SetDebugVerbose) `
+  -and $__PROFILER_SetDebugVerbose -eq $true
 
 $__PROFILER_WriteOn_LogEvent = `
-  $Env:__PROFILER_WriteOn_LogEvent -eq $true `
-  -or $__PROFILER_WriteOn_LogEvent.IsPresent
+(Test-Path variable:__PROFILER_WriteOn_LogEvent) `
+  -and $__PROFILER_WriteOn_LogEvent -eq $true
 
 $__PROFILER_WithExamples = `
-  $Env:__PROFILER_WithExamples -eq $true `
-  -or $__PROFILER_WithExamples.IsPresent
+(Test-Path variable:__PROFILER_WithExamples) `
+  -and $__PROFILER_WithExamples -eq $true
+
+
+if ($__PROFILER_SetStrictModeStop -eq $true) {
+  Set-StrictMode -Version 3.0
+  $ErrorActionPreference = "Stop"
+}
 
 if ($__PROFILER_SetDebugVerbose -eq $true) {
   $DebugPreference = "Continue"
   $VerbosePreference = "Continue"
 }
 
+
 Write-Host "_________.______________________________________________________________"
 Write-Debug "Starting at: $($__execution_timestamp_.ToLocalTime().ToString("dddd, 1yyyy-MM-dd HH:mm:ss.fff (zzz)"))"
 
-$__execution_ctx = @{
+$global:__execution_ctx = @{
   watch          = $__execution_stopwatch_
   timestamp      = $__execution_timestamp_
   absorbChildren = $true
@@ -47,8 +64,8 @@ $__execution_ctx = @{
   writeOnExit    = $false
 }
 
-Write-Debug "`$__PROFILER_SetDebugVerbose => $($__PROFILER_SetDebugVerbose)"
-Write-Debug "`$__PROFILER_WriteOn_LogEvent => $($__execution_ctx.writeOnEvent)"
+Write-Debug "`$__PROFILER_SetDebugVerbose => $__PROFILER_SetDebugVerbose"
+Write-Debug "`$__PROFILER_WriteOn_LogEvent => $($global:__execution_ctx.writeOnEvent)"
 
 #endregion
 
@@ -127,7 +144,7 @@ function Write-Prefixed ($Message, $prefix, [ScriptBlock]$writer) {
 }
 
 function Write-DebugElapsed ($Message, $ms = $null) {
-  $ms ??= $__execution_ctx.watch.ElapsedMilliseconds
+  $ms ??= $global:__execution_ctx.watch.ElapsedMilliseconds
   $ms = "$ms ".PadLeft(15)
 
   Write-Prefixed $Message $ms {
@@ -137,7 +154,7 @@ function Write-DebugElapsed ($Message, $ms = $null) {
 }
 
 function Write-HostElapsed ($Message, $IndentSize = 11) {
-  $ms = $__execution_ctx.watch.ElapsedMilliseconds
+  $ms = $global:__execution_ctx.watch.ElapsedMilliseconds
   $ms = "$ms ms| ".PadLeft($IndentSize)
 
   Write-Prefixed $Message $ms {
@@ -166,14 +183,14 @@ Write-VerboseDated "Verbosity set to: $VerbosePreference"
 
 if ($DebugPreference -ne "Continue") {
   Write-Verbose "Disabling Log Event Writers"
-  $__execution_ctx.writeOnEvent = $false
-  $__execution_ctx.writeOnExit = $false
+  $global:__execution_ctx.writeOnEvent = $false
+  $global:__execution_ctx.writeOnExit = $false
 }
 
-$__execution_ctx.name = "//Profile.ps1"
-$__execution_ctx.events = @()
-$__execution_ctx.scopes = @()
-$__execution_ctx.level = 0
+$global:__execution_ctx.name = "//Profile.ps1"
+$global:__execution_ctx.events = @()
+$global:__execution_ctx.scopes = @()
+$global:__execution_ctx.level = 0
 
 function __logEvent ($eventMsg) {
   function depthMarker ($depth) {
@@ -193,14 +210,14 @@ function __logEvent ($eventMsg) {
     $indent + $name + $scopeMark
   }
 
-  function getEventMessageLines () {
+  function getEventMessageLines ($ctx) {
     $prefix = ""
     $scopeName = ""
-    $scopeDepth = $__execution_ctx.scopes.Count
-    $ctxMark = depthMarker $__execution_ctx.level
+    $scopeDepth = $ctx.scopes.Count
+    $ctxMark = depthMarker $ctx.level
 
     if ($scopeDepth -gt 0) {
-      $scope = $__execution_ctx.scopes[-1]
+      $scope = $ctx.scopes[-1]
       if ($null -ne $scope) {
         $scopeName = fst $scope
         $prefix = scopePrefix $scopeName $scopeDepth
@@ -220,14 +237,15 @@ function __logEvent ($eventMsg) {
     }
   }
 
-  $watch = $__execution_ctx.watch
+  $ctx = $global:__execution_ctx
+
+  $watch = $ctx.watch
   $eventMs = $watch.ElapsedMilliseconds
-
-  $eventMsg = $(getEventMessageLines)
+  $eventMsg = getEventMessageLines $ctx
   $nextEvent = pair $eventMsg $eventMs
-  $__execution_ctx.events += $nextEvent
+  $ctx.events += $nextEvent
 
-  if ($__execution_ctx.writeOnEvent) {
+  if ($ctx.writeOnEvent) {
     Write-DebugElapsed $eventMsg $eventMs
   }
 }
@@ -235,12 +253,13 @@ function __logEvent ($eventMsg) {
 function __logScopePush ($scopeName) {
   __logEvent "Pushing execution scope '$scopeName'"
   $scope = pair "$scopeName" $(startWatch)
-  $__execution_ctx.scopes += $scope
+  $global:__execution_ctx.scopes += $scope
 }
 
 function __logScopePop () {
-  $count = $__execution_ctx.scopes.Count
-  $scope = $__execution_ctx.scopes[-1]
+  $ctx = $global:__execution_ctx
+  $count = $ctx.scopes.Count
+  $scope = $ctx.scopes[-1]
   if ($count -eq 0 -or $null -eq $scope) {
     throw "Popped not existing Log Scope"
   }
@@ -249,12 +268,12 @@ function __logScopePop () {
   __logEvent "Scope finished within $elapsed ms"
 
   Switch ($count) {
-    1 { $__execution_ctx.scopes = @() }
+    1 { $ctx.scopes = @() }
     Default {
       $lastIndex = $count - 1
       $end = $lastIndex - 1
-      $__execution_ctx.scopes = `
-        $__execution_ctx.scopes[0..$end]
+      $ctx.scopes = `
+        $ctx.scopes[0..$end]
     }
   }
 }
@@ -269,30 +288,31 @@ function __logContext ($contextName, $ScriptBlock) {
   $ctxName = "[ctx] $contextName"
   __logScopePush $ctxName
 
-  $parentCtx = $__execution_ctx.Clone()
+  $ctx = $global:__execution_ctx
+  $parentCtx = $ctx.Clone()
   try {
-    $__execution_ctx.name = $contextName
-    $__execution_ctx.events = @()
-    $__execution_ctx.scopes = @()
-    $__execution_ctx.level += 1
+    $ctx.name = $contextName
+    $ctx.events = @()
+    $ctx.scopes = @()
+    $ctx.level += 1
 
-    $__execution_ctx.timestamp = Get-Date -AsUTC
-    $__execution_ctx.watch = $(startWatch)
+    $ctx.timestamp = Get-Date -AsUTC
+    $ctx.watch = $(startWatch)
     __logEvent "___ $(stringLine "_")"
     __logEvent "--- Starting '$ctxName'..."
     Invoke-Command $ScriptBlock
 
-    $elapsed = $__execution_ctx.watch.ElapsedMilliseconds
+    $elapsed = $ctx.watch.ElapsedMilliseconds
     __logEvent "--- '$ctxName' done within $elapsed ms"
     __logEvent "--- $(stringLine "=")"
 
-    if ($__execution_ctx.absorbChildren) {
-      $children = $__execution_ctx.events
+    if ($ctx.absorbChildren) {
+      $children = $ctx.events
       __logEvent "absorbing $($children.Count) child events"
       $parentCtx.events += $children
     }
 
-    if ($__execution_ctx.writeOnExit) {
+    if ($ctx.writeOnExit) {
       __logShowAllEvents_WriteHost
     }
   }
@@ -303,10 +323,10 @@ function __logContext ($contextName, $ScriptBlock) {
 }
 
 function __logContext_writeOnEvent ($value) {
-  $__execution_ctx.writeOnEvent = $value
+  $global:__execution_ctx.writeOnEvent = $value
 }
 function __logContext_writeOnExit ($value) {
-  $__execution_ctx.writeOnExit = $value
+  $global:__execution_ctx.writeOnExit = $value
 }
 function __logContext_writeSetDefaults () {
   __logContext_writeOnEvent $false
@@ -314,13 +334,14 @@ function __logContext_writeSetDefaults () {
 }
 
 function __logShowAllEvents_WriteHost () {
-  $elapsedMs = $__execution_ctx.watch.ElapsedMilliseconds
-  $length = $__execution_ctx.events.Count
+  $ctx = $global:__execution_ctx
+  $elapsedMs = $ctx.watch.ElapsedMilliseconds
+  $length = $ctx.events.Count
   $nextShowEventsCount = 4
 
   function logShowEvent ($msg) {
     __logEvent ("__logShowAllEvents_WriteHost: $msg")
-    return $__execution_ctx.events[-1]
+    return $ctx.events[-1]
   }
 
   logShowEvent "starting" | Out-Null
@@ -334,7 +355,7 @@ function __logShowAllEvents_WriteHost () {
       $num.ToString().PadLeft($size)
     }
 
-    $events = $__execution_ctx.events
+    $events = $ctx.events
 
     $idxPadding = $length + $nextShowEventsCount
     $idxPadding = strSize $idxPadding
@@ -356,7 +377,7 @@ function __logShowAllEvents_WriteHost () {
     }
 
     function makeShowEntry ($message) {
-      $eventMs = $__execution_ctx.watch.ElapsedMilliseconds
+      $eventMs = $ctx.watch.ElapsedMilliseconds
       return pair (prefixed $message) $eventMs
     }
 
@@ -378,9 +399,9 @@ function __logShowAllEvents_WriteHost () {
   }
 
   Write-Host "### $(stringLine "#" -length 42)"
-  Write-Host "### Execution log of '$($__execution_ctx.name)':"
-  Write-Host "  * timestamp -> $($__execution_ctx.timestamp.ToString("o"))"
-  Write-Host "  * watch -> $($__execution_ctx.watch.ElapsedMilliseconds) ms"
+  Write-Host "### Execution log of '$($ctx.name)':"
+  Write-Host "  * timestamp -> $($ctx.timestamp.ToString("o"))"
+  Write-Host "  * watch -> $($ctx.watch.ElapsedMilliseconds) ms"
   Write-Host "  * events -> $($(outEvents "    ") -join "`n")"
 
   logShowEvent "all events shown" | Out-Null
@@ -1178,6 +1199,7 @@ Write-HostElapsed "Importing Posh-Git module for commands completion"
 Import-Module -Name "$HOME\Repos\posh-git\src\posh-git.psm1"
 
 Write-VerboseDated "The 'git' completion loaded."
+__logScopePop
 
 #endregion
 
